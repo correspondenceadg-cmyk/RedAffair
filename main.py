@@ -14,6 +14,8 @@ from kivy.clock import Clock
 
 import game
 
+FONT_PATH = 'fonts/DepartureMono.ttf'
+
 
 class GameStdout(StringIO):
     def __init__(self, app_ref, *args, **kwargs):
@@ -45,21 +47,30 @@ class GameUI(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs, orientation='vertical')
 
-        self.scroll = ScrollView(size_hint=(1, 0.85))
         self.output_label = Label(
             text='Loading…\n',
+            font_name=FONT_PATH,
+            font_size='14sp',
             size_hint_y=None,
             halign='left',
-            valign='top'
+            valign='top',
+            text_size=(None, None)
         )
-        self.output_label.bind(texture_size=self.output_label.setter('size'))
+        self.output_label.bind(
+            texture_size=lambda instance, size: setattr(instance, 'size', size)
+        )
+
+        self.scroll = ScrollView(size_hint=(1, 0.85))
         self.scroll.add_widget(self.output_label)
         self.add_widget(self.scroll)
 
         self.input_box = TextInput(
             hint_text='Type command…',
+            font_name=FONT_PATH,
+            font_size='18sp',
             size_hint=(1, 0.1),
-            multiline=False
+            multiline=False,
+            padding=[10, 15, 10, 10]
         )
         self.input_box.bind(on_text_validate=self.send_input)
         self.add_widget(self.input_box)
@@ -94,7 +105,7 @@ class GameUI(BoxLayout):
 
     def add_output(self, text):
         clean = self.ansi_escape.sub('', text)
-        max_lines = 500
+        max_lines = 1000
         self.output_label.text += clean
         lines = self.output_label.text.splitlines()
         if len(lines) > max_lines:
