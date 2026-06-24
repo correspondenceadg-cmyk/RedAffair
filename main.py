@@ -3,6 +3,7 @@ import threading
 import queue
 import re
 import traceback
+import os
 from io import StringIO
 
 from kivy.app import App
@@ -12,7 +13,20 @@ from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.clock import Clock
 
-import game
+LOG_FILE = '/sdcard/redaffair_crash.log'
+
+def log_crash(exc_text):
+    try:
+        with open(LOG_FILE, 'w') as f:
+            f.write(exc_text)
+    except:
+        pass
+
+try:
+    import game
+except Exception as e:
+    log_crash(f"Failed to import game.py:\n{traceback.format_exc()}")
+    raise
 
 FONT_PATH = 'fonts/DepartureMono.ttf'
 
@@ -46,10 +60,18 @@ class GameStdin:
 class GameUI(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs, orientation='vertical')
+        try:
+            self._init_ui()
+        except Exception:
+            log_crash(traceback.format_exc())
+            self.add_widget(Label(text=f"FATAL ERROR\n{LOG_FILE}"))
+
+    def _init_ui(self):
+        font_to_use = FONT_PATH if os.path.exists(FONT_PATH) else None
 
         self.output_label = Label(
             text='Loading…\n',
-            font_name=FONT_PATH,
+            font_name=font_to_use,
             font_size='14sp',
             size_hint_y=None,
             halign='left',
@@ -66,7 +88,7 @@ class GameUI(BoxLayout):
 
         self.input_box = TextInput(
             hint_text='Type command…',
-            font_name=FONT_PATH,
+            font_name=font_to_use,
             font_size='18sp',
             size_hint=(1, 0.1),
             multiline=False,
@@ -94,6 +116,7 @@ class GameUI(BoxLayout):
                 pass
             except Exception:
                 error_msg = traceback.format_exc()
+                log_crash(error_msg)
                 Clock.schedule_once(lambda dt: self.add_output(f"\n[ERROR]\n{error_msg}"), 0)
             finally:
                 sys.stdout = old_stdout
@@ -129,4 +152,8 @@ class MyGameApp(App):
 
 
 if __name__ == '__main__':
-    MyGameApp().run()
+    try:
+        MyGameApp().run()
+    except Exception:
+        log_crash(traceback.format_exc())
+        raise
