@@ -85,7 +85,7 @@ class GameUI(BoxLayout):
         self.output_label = Label(
             text='',
             font_name=font_to_use,
-            font_size='14sp',
+            font_size='16sp',
             color=RED_HEX,
             size_hint=(None, None),
             halign='left',
