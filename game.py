@@ -43,7 +43,7 @@ def play_game():
         return f"{top}\n{middle}{bottom}"
 
     def clear_screen():
-        print("\n" * 50)
+        print("##CLEARSCREEN##")
 
     def get_first_name(full_name):
         return full_name.split()[0]
