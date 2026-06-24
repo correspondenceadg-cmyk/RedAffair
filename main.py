@@ -12,6 +12,8 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.clock import Clock
+from kivy.core.window import Window
+from kivy.graphics import Color, Rectangle
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
 
@@ -29,6 +31,9 @@ except Exception as e:
     raise
 
 FONT_PATH = 'fonts/DepartureMono.ttf'
+
+RED_HEX = (1, 0, 0, 1)
+BLACK_HEX = (0, 0, 0, 1)
 
 
 class GameStdout(StringIO):
@@ -60,26 +65,36 @@ class GameStdin:
 class GameUI(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs, orientation='vertical')
+        with self.canvas.before:
+            Color(*BLACK_HEX)
+            self.bg_rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_bg, pos=self._update_bg)
         try:
             self._init_ui()
         except Exception:
             log_crash(traceback.format_exc())
             self.add_widget(Label(text=f"FATAL ERROR\n{LOG_FILE}"))
 
+    def _update_bg(self, instance, value):
+        self.bg_rect.size = instance.size
+        self.bg_rect.pos = instance.pos
+
     def _init_ui(self):
         font_to_use = FONT_PATH if os.path.exists(FONT_PATH) else None
 
         self.output_label = Label(
-            text='Loading…\n',
+            text='',
             font_name=font_to_use,
             font_size='14sp',
-            size_hint_y=None,
+            color=RED_HEX,
+            size_hint=(None, None),
             halign='left',
             valign='top',
-            text_size=(None, None)
+            text_size=(Window.width, None),
+            width=Window.width
         )
         self.output_label.bind(
-            texture_size=lambda instance, size: setattr(instance, 'size', size)
+            texture_size=self._on_texture_size
         )
 
         self.scroll = ScrollView(size_hint=(1, 0.85))
@@ -90,6 +105,9 @@ class GameUI(BoxLayout):
             hint_text='Type command…',
             font_name=font_to_use,
             font_size='18sp',
+            foreground_color=RED_HEX,
+            background_color=BLACK_HEX,
+            cursor_color=RED_HEX,
             size_hint=(1, 0.1),
             multiline=False,
             padding=[10, 15, 10, 10]
@@ -101,7 +119,15 @@ class GameUI(BoxLayout):
         self.ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
         self.game_thread = None
 
+        Window.bind(on_resize=self._on_window_resize)
         Clock.schedule_once(self.start_game, 1)
+
+    def _on_window_resize(self, instance, width, height):
+        self.output_label.text_size = (width, None)
+        self.output_label.width = width
+
+    def _on_texture_size(self, instance, size):
+        instance.size = size
 
     def start_game(self, dt):
         old_stdout = sys.stdout
