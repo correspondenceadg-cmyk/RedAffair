@@ -85,7 +85,7 @@ class GameUI(BoxLayout):
         self.output_label = Label(
             text='',
             font_name=font_to_use,
-            font_size='16sp',
+            font_size='15sp',
             color=RED_HEX,
             size_hint=(None, None),
             halign='left',
@@ -158,6 +158,9 @@ class GameUI(BoxLayout):
 
     def add_output(self, text):
         clean = self.ansi_escape.sub('', text)
+        if '##CLEARSCREEN##' in clean:
+            self.output_label.text = ''
+            clean = clean.replace('##CLEARSCREEN##', '')
         max_lines = 1000
         self.output_label.text += clean
         lines = self.output_label.text.splitlines()
