@@ -91,13 +91,14 @@ class GameUI(BoxLayout):
             halign='left',
             valign='top',
             text_size=(Window.width, None),
-            width=Window.width
+            width=Window.width,
+            height=0
         )
         self.output_label.bind(
             texture_size=self._on_texture_size
         )
 
-        self.scroll = ScrollView(size_hint=(1, 0.85))
+        self.scroll = ScrollView(size_hint=(1, 0.85), do_scroll_x=False)
         self.scroll.add_widget(self.output_label)
         self.add_widget(self.scroll)
 
@@ -125,9 +126,12 @@ class GameUI(BoxLayout):
     def _on_window_resize(self, instance, width, height):
         self.output_label.text_size = (width, None)
         self.output_label.width = width
+        self.scroll.scroll_x = 0
 
     def _on_texture_size(self, instance, size):
-        instance.size = size
+        instance.height = size[1]
+        instance.width = Window.width
+        self.scroll.scroll_x = 0
 
     def start_game(self, dt):
         old_stdout = sys.stdout
