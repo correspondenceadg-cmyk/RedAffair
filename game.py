@@ -43,7 +43,7 @@ def play_game():
         return f"{top}\n{middle}{bottom}"
 
     def clear_screen():
-        os.system('cls' if os.name == 'nt' else 'clear')
+        print("\n" * 50)
 
     def get_first_name(full_name):
         return full_name.split()[0]
@@ -318,7 +318,7 @@ def play_game():
         print("╚══════════════════════════════════════════════════╝" + RESET)
 
     def add_evidence(ev_id):
-        global evidence_collected
+        nonlocal evidence_collected
         if ev_id not in clues:
             clues.add(ev_id)
             evidence_collected += 1
@@ -328,7 +328,7 @@ def play_game():
                 level_up()
 
     def remove_evidence(ev_id):
-        global evidence_collected
+        nonlocal evidence_collected
         if ev_id in clues:
             clues.remove(ev_id)
             evidence_collected -= 1
@@ -397,7 +397,7 @@ def play_game():
         print(border(desc, width=68))
 
     def move(direction):
-        global current_location
+        nonlocal current_location
         if direction in locations:
             current_location = direction
             clear_screen()
@@ -407,7 +407,7 @@ def play_game():
             print("Not a room. Try: counter, dining, kitchen, office.")
 
     def search():
-        global revolver_found
+        nonlocal revolver_found
         loc = locations[current_location]
         if current_location == "dining" and loc.get("hidden_revolver") and not revolver_found:
             revolver_found = True
@@ -438,7 +438,7 @@ def play_game():
         print("Nothing. Nothing worth mentioning anyway, just grease, despair, and the miasma of mystery.")
 
     def examine(item):
-        global body_examined
+        nonlocal body_examined
         if item == "body" and current_location == "office":
             if not body_examined:
                 body_examined = True
@@ -458,7 +458,7 @@ def play_game():
             print("It's not here. Maybe it was never here. Maybe nothing is.")
 
     def talk(sus):
-        global nyx_escape_offered
+        nonlocal nyx_escape_offered
         if not sus:
             print("Who did you want to talk to? Try: Aiden, Blake, Alice, Nyx (or their last names).")
             return
@@ -617,7 +617,7 @@ def play_game():
             s["hostile"] = True
 
     def detain(sus):
-        global handcuffs
+        nonlocal handcuffs
         if handcuffs <= 0:
             print("You reach for your cuffs and find no more.")
             return
@@ -714,7 +714,7 @@ def play_game():
             ending_carnage()
 
     def accuse(sus):
-        global handcuffs
+        nonlocal handcuffs
         if not sus:
             print("Accuse who? Make up your mind, detective.")
             return
@@ -757,7 +757,7 @@ def play_game():
             ending_fail()
 
     def secret_ending():
-        global game_over
+        nonlocal game_over
         print(f"\nWrong accusation. You made the wrong bet. Very wrong.")
         print(f"Behind you: a soft click. You spin. {get_first_name(suspects[RESERVED_KEY_THX1138]['name'])}, one wrist free, working on the other.")
         print(f"'Did you really think these standard restraints could hold me?' They smile. The predator turns prey, but it dawns on you they're damn good at being either.")
@@ -768,13 +768,13 @@ def play_game():
         sys.exit(0)
 
     def nyx_escape_ending():
-        global game_over
+        nonlocal game_over
         print("Nyx parts their lips once more to reveal their toxic solvent-based smile. Their eyes flash the recognition that's only ever shared between two predators in league with each other. You immediately begin to consider how you'll spin this to the police drone. You scratch your notepad with fervor and get to work destroying the evidence. Why you did this, only you'll ever know, and let's hope it doesn't haunt you any longer than it takes to finish a bottle of absinthe. Few things ever do.\n\nGAME OVER")
         game_over = True
         sys.exit(0)
 
     def ending_correct():
-        global game_over
+        nonlocal game_over
         k = suspects[RESERVED_KEY_THX1138]
         print(f"\n{RED}Everything clicks into place. The whole crooked design.{RESET}")
         print(f"'{get_first_name(k['name'])}, in the office, with the revolver. Victim killed in cold blood. For ego? For fun? For the oldest reason there ever was: because you could.'")
@@ -792,7 +792,7 @@ def play_game():
         sys.exit(0)
 
     def ending_fail():
-        global game_over
+        nonlocal game_over
         k = suspects[RESERVED_KEY_THX1138]
         print("\nYour accusation shatters against the truth like glass against bulkhead.")
         print(f"{get_first_name(k['name'])} has no skeletons in their closet, at least none that are people. 'Poor {player_name}. So close. Yet so... not.'")
@@ -808,13 +808,13 @@ def play_game():
         sys.exit(0)
 
     def ending_carnage():
-        global game_over
+        nonlocal game_over
         print("You look back across the bar. Everyone's dead. Dead folk tell no tales, but there's sure to be plenty living who watch your live-streamed execution. The detective who went completely mad and committed mass murder. Good job, I guess, detective. Maybe you'll solve a case in the next life.\n\nGAME OVER")
         game_over = True
         sys.exit(0)
 
     def countenance():
-        global countenance_used, handcuffs, required_incriminating
+        nonlocal countenance_used, handcuffs, required_incriminating
         if countenance_used:
             print("You've already called upon your Countenance. The moment has passed.")
             return
