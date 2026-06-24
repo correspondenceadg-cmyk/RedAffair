@@ -6,7 +6,7 @@ def play_game():
     BOLD = '\033[1m'
     RESET = '\033[0m'
 
-    def border(text, width=42, double=False):
+    def border(text, width=44, double=False):
         try:
             import shutil
             term_width = shutil.get_terminal_size().columns
