@@ -10,6 +10,7 @@ from io import StringIO
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
@@ -55,7 +56,6 @@ LIGHT_THEME = {
 }
 
 
-# ---------- Splash Screen ----------
 class SplashScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -71,52 +71,55 @@ class SplashScreen(Screen):
                               size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
         self.layout.add_widget(self.bg_image)
 
-        # Title with outline (dead center)
-        self.title_container = FloatLayout(size_hint=(None, None),
-                                           pos_hint={'center_x': 0.5, 'center_y': 0.5})
+        # Title with outline – uses a RelativeLayout that auto‑sizes,
+        # then positioned with center hints → always perfectly centered
+        self.title_box = RelativeLayout(size_hint=(None, None),
+                                        pos_hint={'center_x': 0.5, 'center_y': 0.5})
         title_text = 'THE RED AFFAIR'
         title_font_size = '36sp'
-        # White outline via four directions + extra offset
-        for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1)]:
-            outline = Label(text=title_text,
-                            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-                            font_size=title_font_size,
-                            color=(1, 1, 1, 1),
-                            halign='center', valign='middle',
-                            size_hint=(None, None))
-            outline.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
-            outline.pos = (dx, dy)
-            self.title_container.add_widget(outline)
-        # Main red title
-        self.title_label = Label(text=title_text,
-                                 font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-                                 font_size=title_font_size,
-                                 color=(1, 0, 0, 1),
-                                 halign='center', valign='middle',
-                                 size_hint=(None, None))
-        self.title_label.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
-        self.title_label.pos = (0, 0)
-        self.title_container.add_widget(self.title_label)
-        self.title_container.bind(size=self._update_title_size)
-        self.layout.add_widget(self.title_container)
 
-        # Spinner (between title and bottom)
-        self.spinner_scatter = Scatter(do_rotation=True, do_scale=False, do_translation=False,
+        # List to hold all labels for size calculation
+        self.title_labels = []
+
+        # White outline labels (four directions + diagonals)
+        offsets = [(-2,0), (2,0), (0,-2), (0,2), (-1,-1), (1,1)]
+        for dx, dy in offsets:
+            lbl = Label(text=title_text,
+                        font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
+                        font_size=title_font_size,
+                        color=(1, 1, 1, 1),
+                        halign='center', valign='middle',
+                        size_hint=(None, None),
+                        pos=(dx, dy))
+            lbl.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
+            self.title_box.add_widget(lbl)
+            self.title_labels.append(lbl)
+
+        # Main red title
+        self.red_title = Label(text=title_text,
+                               font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
+                               font_size=title_font_size,
+                               color=(1, 0, 0, 1),
+                               halign='center', valign='middle',
+                               size_hint=(None, None),
+                               pos=(0, 0))
+        self.red_title.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
+        self.title_box.add_widget(self.red_title)
+        self.title_labels.append(self.red_title)
+
+        # Adjust title_box size to contain all labels
+        self.red_title.bind(texture_size=self._adjust_title_box_size)
+        self.title_box.bind(size=self._keep_title_centered)
+        self.layout.add_widget(self.title_box)
+
+        # Spinner – continuous rotation using a Scatter + Clock
+        self.spinner_scatter = Scatter(do_rotation=False, do_scale=False, do_translation=False,
                                        size_hint=(None, None), size=(64, 64),
                                        pos_hint={'center_x': 0.5, 'center_y': 0.3})
         self.spinner_image = Image(source='assets/spinner.png',
                                    size=(64, 64), size_hint=(None, None))
         self.spinner_scatter.add_widget(self.spinner_image)
         self.layout.add_widget(self.spinner_scatter)
-
-        # Status text (below spinner)
-        self.status_label = Label(text='Checking game data...',
-                                  font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-                                  font_size='14sp', color=(1, 0.5, 0.5, 1),
-                                  size_hint=(None, None),
-                                  pos_hint={'center_x': 0.5, 'center_y': 0.2})
-        self.status_label.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
-        self.layout.add_widget(self.status_label)
 
         # Copyright at bottom
         self.copyright_label = Label(text='Studio Name © 2026',
@@ -129,46 +132,52 @@ class SplashScreen(Screen):
 
         self.add_widget(self.layout)
 
-        self.spin_anim = None
-        self.fade_out_anim = None
-        self.ready = False
-        self.start_time = None
+        self.spin_event = None
+        self.fade_out_event = None
 
     def _update_bg_rect(self, instance, value):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
-    def _update_title_size(self, instance, size):
-        instance.size = (size[0] + 4, size[1] + 4)
+    def _adjust_title_box_size(self, *args):
+        # Compute the bounding box that encompasses all labels
+        max_w = 0
+        max_h = 0
+        for lbl in self.title_labels:
+            w = lbl.width + abs(lbl.pos[0])
+            h = lbl.height + abs(lbl.pos[1])
+            if w > max_w: max_w = w
+            if h > max_h: max_h = h
+        self.title_box.size = (max_w + 4, max_h + 4)   # small padding
+
+    def _keep_title_centered(self, instance, size):
+        # No extra logic needed; pos_hint handles centering
+        pass
 
     def on_enter(self):
-        # Start continuous rotation
-        self.spin_anim = Animation(rotation=360, duration=2)
-        self.spin_anim.repeat = True
-        self.spin_anim.start(self.spinner_scatter)
+        # Continuous rotation
+        self.spin_event = Clock.schedule_interval(self._rotate_spinner, 1/60)
+        # Fade out after 10 seconds
+        self.fade_out_event = Clock.schedule_once(self.start_fade_out, 10)
 
-        # Simulate a quick data integrity check
-        Clock.schedule_once(self._run_checks, 1.5)
-
-    def _run_checks(self, dt):
-        # Perform simple checks (game module already imported successfully)
-        # Here you could actually verify key game data, but for now we just fake it
-        self.status_label.text = 'All systems ready.'
-        self.ready = True
-        # Start the countdown for remaining display time (10 seconds total from now)
-        self.start_time = Clock.schedule_once(self.start_fade_out, 10)
+    def _rotate_spinner(self, dt):
+        self.spinner_scatter.rotation += 3   # constant speed
 
     def start_fade_out(self, dt):
-        # Fade entire layout out
         fade_out = Animation(opacity=0, duration=2)
         fade_out.bind(on_complete=self._go_menu)
         fade_out.start(self.layout)
 
     def _go_menu(self, *args):
-        if self.spin_anim:
-            self.spin_anim.repeat = False
-            self.spin_anim.cancel(self.spinner_scatter)
+        if self.spin_event:
+            self.spin_event.cancel()
         self.manager.current = 'menu'
+
+    def on_leave(self):
+        if self.spin_event:
+            self.spin_event.cancel()
+        if self.fade_out_event:
+            self.fade_out_event.cancel()
 
 
 # ---------- Game I/O ----------
