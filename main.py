@@ -178,18 +178,21 @@ class GameUI(BoxLayout):
         sys.stdout = GameStdout(self)
         sys.stdin = GameStdin(self.input_queue)
         try:
-            try:
-                game.play_game()
-            except SystemExit:
-                pass
-            except Exception:
-                error_msg = traceback.format_exc()
-                log_crash(error_msg)
-                Clock.schedule_once(lambda dt: self.add_output(f"\n[ERROR]\n{error_msg}"), 0)
+            game.play_game()
+        except SystemExit:
+            pass
+        except Exception:
+            error_msg = traceback.format_exc()
+            log_crash(error_msg)
+            Clock.schedule_once(lambda dt: self.show_error(error_msg), 0)
         finally:
             sys.stdout = old_stdout
             sys.stdin = old_stdin
             Clock.schedule_once(lambda dt: self.disable_input(), 0)
+
+    def show_error(self, error_msg):
+        self.output_label.text += f"\n[ERROR]\n{error_msg}"
+        self.scroll.scroll_y = 0
 
     def add_output(self, text):
         clean = self.ansi_escape.sub('', text)
@@ -274,8 +277,6 @@ class MenuScreen(Screen):
 
     def start_game(self, instance):
         self.manager.current = 'game'
-        game_screen = self.manager.get_screen('game')
-        game_screen.start_game()
 
     def open_settings(self, instance):
         self.manager.current = 'settings'
@@ -354,9 +355,15 @@ class GameScreen(Screen):
             app = App.get_running_app()
             self.game_ui = GameUI(theme=app.current_theme, back_callback=self.go_menu)
             self.add_widget(self.game_ui)
+        self.start_game()
 
     def start_game(self):
-        self.game_ui.start_game()
+        try:
+            self.game_ui.start_game()
+        except Exception:
+            err = traceback.format_exc()
+            log_crash(err)
+            self.game_ui.output_label.text = f"FATAL STARTUP ERROR\n{err}"
 
     def update_theme(self, theme):
         if self.game_ui:
