@@ -24,7 +24,6 @@ from kivy.uix.widget import Widget
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
-from kivy.graphics.shader import Shader
 from kivy.animation import Animation
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
@@ -58,8 +57,15 @@ LIGHT_THEME = {
     'cursor': (0, 0, 1, 1)
 }
 
-# ----- CRT Shader -----
-CRT_FS = '''
+# --------------- Safe CRT shader import ---------------
+CRT_AVAILABLE = False
+CRTOverlay = None
+
+try:
+    from kivy.graphics.shader import Shader
+    CRT_AVAILABLE = True
+
+    CRT_FS = '''
 #ifdef GL_ES
     precision highp float;
 #endif
@@ -115,48 +121,52 @@ void main() {
 }
 '''
 
-class CRTOverlay(Widget):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.size_hint = (1, 1)
-        with self.canvas:
-            self.shader = Shader(fs=CRT_FS)
-            self.shader['u_resolution'] = (Window.width, Window.height)
-            self.shader['u_time'] = 0.0
-            self.shader['u_glitch_intensity'] = 0.0
-            self.rect = Rectangle(size=self.size, pos=self.pos)
-        self.bind(size=self._update_rect, pos=self._update_rect)
-        self.time_event = None
-        self.glitch_event = None
-        self.time_acc = 0.0
+    class CRTOverlay(Widget):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.size_hint = (1, 1)
+            with self.canvas:
+                self.shader = Shader(fs=CRT_FS)
+                self.shader['u_resolution'] = (Window.width, Window.height)
+                self.shader['u_time'] = 0.0
+                self.shader['u_glitch_intensity'] = 0.0
+                self.rect = Rectangle(size=self.size, pos=self.pos)
+            self.bind(size=self._update_rect, pos=self._update_rect)
+            self.time_event = None
+            self.glitch_event = None
+            self.time_acc = 0.0
 
-    def _update_rect(self, instance, value):
-        self.rect.size = instance.size
-        self.rect.pos = instance.pos
-        self.shader['u_resolution'] = (instance.size[0], instance.size[1])
+        def _update_rect(self, instance, value):
+            self.rect.size = instance.size
+            self.rect.pos = instance.pos
+            self.shader['u_resolution'] = (instance.size[0], instance.size[1])
 
-    def on_show(self):
-        self.time_event = Clock.schedule_interval(self._update_shader, 1/60.0)
-        self.glitch_event = Clock.schedule_interval(self._random_glitch, 0.5)
+        def on_show(self):
+            self.time_event = Clock.schedule_interval(self._update_shader, 1/60.0)
+            self.glitch_event = Clock.schedule_interval(self._random_glitch, 0.5)
 
-    def on_hide(self):
-        if self.time_event:
-            self.time_event.cancel()
-        if self.glitch_event:
-            self.glitch_event.cancel()
+        def on_hide(self):
+            if self.time_event:
+                self.time_event.cancel()
+            if self.glitch_event:
+                self.glitch_event.cancel()
 
-    def _update_shader(self, dt):
-        self.time_acc += dt
-        self.shader['u_time'] = self.time_acc
+        def _update_shader(self, dt):
+            self.time_acc += dt
+            self.shader['u_time'] = self.time_acc
 
-    def _random_glitch(self, dt):
-        if py_random.random() < 0.3:
-            self.shader['u_glitch_intensity'] = py_random.random() * 0.8 + 0.2
-        else:
-            self.shader['u_glitch_intensity'] *= 0.9
+        def _random_glitch(self, dt):
+            if py_random.random() < 0.3:
+                self.shader['u_glitch_intensity'] = py_random.random() * 0.8 + 0.2
+            else:
+                self.shader['u_glitch_intensity'] *= 0.9
+
+except Exception as shader_err:
+    log_crash(f"CRT shader load failed: {traceback.format_exc()}")
+    CRT_AVAILABLE = False
 
 
-# ----- Splash Screen -----
+# ---------- Splash Screen ----------
 class SplashScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -542,6 +552,9 @@ class SettingsScreen(Screen):
             color=(1, 1, 1, 1),
             size_hint=(1, 0.15)
         )
+        if not CRT_AVAILABLE:
+            self.dynamic_lighting_toggle.disabled = True
+            self.dynamic_lighting_toggle.text = 'Dynamic Lighting: Not supported'
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         layout.add_widget(self.dynamic_lighting_toggle)
 
@@ -574,6 +587,8 @@ class SettingsScreen(Screen):
 
     def toggle_dynamic_lighting(self, instance):
         app = App.get_running_app()
+        if not CRT_AVAILABLE:
+            return
         if instance.state == 'down':
             instance.text = 'Dynamic Lighting: ON'
             app.enable_crt()
@@ -633,9 +648,11 @@ class RootWidget(FloatLayout):
         self.sm.current = 'splash'
         self.add_widget(self.sm)
 
-        self.crt_overlay = CRTOverlay()
-        self.crt_overlay.opacity = 0.0
-        self.add_widget(self.crt_overlay)
+        self.crt_overlay = None
+        if CRT_AVAILABLE and CRTOverlay is not None:
+            self.crt_overlay = CRTOverlay()
+            self.crt_overlay.opacity = 0.0
+            self.add_widget(self.crt_overlay)
 
 
 # ---------- App ----------
@@ -648,12 +665,16 @@ class RedAffairApp(App):
         return self.root_widget
 
     def enable_crt(self):
+        if not CRT_AVAILABLE or not self.root_widget.crt_overlay:
+            return
         if not self.crt_enabled:
             self.crt_enabled = True
             self.root_widget.crt_overlay.opacity = 1.0
             self.root_widget.crt_overlay.on_show()
 
     def disable_crt(self):
+        if not CRT_AVAILABLE or not self.root_widget.crt_overlay:
+            return
         if self.crt_enabled:
             self.crt_enabled = False
             self.root_widget.crt_overlay.opacity = 0.0
