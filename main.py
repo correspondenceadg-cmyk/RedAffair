@@ -10,7 +10,6 @@ from io import StringIO
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
@@ -66,92 +65,84 @@ class SplashScreen(Screen):
             self.bg_rect = Rectangle(size=self.size, pos=self.pos)
         self.layout.bind(size=self._update_bg_rect, pos=self._update_bg_rect)
 
-        # background image
-        bg_path = 'assets/splash_bg.png'
-        if os.path.exists(bg_path):
-            self.bg_image = Image(source=bg_path, allow_stretch=True, keep_ratio=False,
-                                  size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
-            self.layout.add_widget(self.bg_image)
+        self.bg_image = Image(source='assets/splash_bg.png',
+                              allow_stretch=True, keep_ratio=False,
+                              size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+        self.layout.add_widget(self.bg_image)
 
-        # rotating spinner PNG (with transparency)
+        # Spinner PNG (rotates)
         self.spinner_scatter = Scatter(do_rotation=True, do_scale=False, do_translation=False,
                                        size_hint=(None, None), size=(64, 64),
                                        pos_hint={'center_x': 0.5, 'center_y': 0.35})
-        spinner_path = 'assets/spinner.png'
-        if os.path.exists(spinner_path):
-            self.spinner_image = Image(source=spinner_path, size=(64, 64),
-                                       size_hint=(None, None))
-        else:
-            # fallback: a text spinner
-            self.spinner_image = Label(text='⟳', font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-                                       font_size='40sp', color=(1, 0.2, 0.2, 1),
-                                       size_hint=(None, None), size=(64, 64))
+        self.spinner_image = Image(source='assets/spinner.png',
+                                   size=(64, 64), size_hint=(None, None))
         self.spinner_scatter.add_widget(self.spinner_image)
         self.layout.add_widget(self.spinner_scatter)
 
-        # title with drop shadow
-        self.title_container = FloatLayout(size_hint=(None, None), pos_hint={'center_x': 0.5, 'center_y': 0.55})
-        self.shadow_label = Label(text='THE RED AFFAIR',
-                                  font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-                                  font_size='30sp', color=(1, 1, 1, 1),
-                                  halign='center', valign='middle',
-                                  size_hint=(None, None))
-        self.shadow_label.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
-        self.title_label = Label(text='THE RED AFFAIR',
+        # Title with white outline (four-direction offset)
+        self.title_container = FloatLayout(size_hint=(None, None),
+                                           pos_hint={'center_x': 0.5, 'center_y': 0.55})
+        title_text = 'THE RED AFFAIR'
+        title_font_size = '36sp'
+        # Outline labels
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (2, -2)]:
+            outline = Label(text=title_text,
+                            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
+                            font_size=title_font_size,
+                            color=(1, 1, 1, 1),
+                            halign='center', valign='middle',
+                            size_hint=(None, None))
+            outline.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
+            outline.pos = (dx, dy)
+            self.title_container.add_widget(outline)
+
+        self.title_label = Label(text=title_text,
                                  font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-                                 font_size='30sp', color=(1, 0, 0, 1),
+                                 font_size=title_font_size,
+                                 color=(1, 0, 0, 1),
                                  halign='center', valign='middle',
                                  size_hint=(None, None))
         self.title_label.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
-        self.title_container.add_widget(self.shadow_label)
-        self.title_container.add_widget(self.title_label)
-        self.shadow_label.pos = (2, -2)
         self.title_label.pos = (0, 0)
+        self.title_container.add_widget(self.title_label)
         self.title_container.bind(size=self._update_container_size)
         self.layout.add_widget(self.title_container)
 
-        # copyright
-        self.copyright_label = Label(text='Studio Name © 2026',
+        # Copyright / studio
+        self.copyright_label = Label(text='DotDropper © 2026',
                                      font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-                                     font_size='14sp', color=(1, 0, 0, 1),
-                                     size_hint=(None, None), pos_hint={'center_x': 0.5, 'y': 0.05})
+                                     font_size='12sp', color=(1, 0, 0, 1),
+                                     size_hint=(None, None),
+                                     pos_hint={'center_x': 0.5, 'y': 0.05})
         self.copyright_label.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
         self.layout.add_widget(self.copyright_label)
 
         self.add_widget(self.layout)
 
-        self.title_anim = None
         self.spin_anim = None
+        self.fade_out_anim = None
 
     def _update_bg_rect(self, instance, value):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
     def _update_container_size(self, instance, size):
-        self.title_container.size = (size[0] + 4, size[1] + 4)
+        instance.size = (size[0] + 4, size[1] + 4)
 
     def on_enter(self):
-        # start spinner rotation
+        # Start spinner rotation immediately
         self.spin_anim = Animation(rotation=360, duration=2)
         self.spin_anim.repeat = True
         self.spin_anim.start(self.spinner_scatter)
 
-        # title and copyright fade in, then out
-        self.title_container.opacity = 0
-        self.copyright_label.opacity = 0
-        self.spinner_scatter.opacity = 0
+        # All elements are already visible (opacity = 1 by default)
+        # Wait 30 seconds, then fade out everything together
+        Clock.schedule_once(self.start_fade_out, 30)
 
-        fade_in = Animation(opacity=1, duration=1.5)
-        fade_out = Animation(opacity=0, duration=1.5)
-        seq = fade_in + Animation(opacity=1, duration=1.5) + fade_out
-        seq.bind(on_complete=self._go_menu)
-        seq.start(self.title_container)
-
-        seq_c = fade_in + Animation(opacity=1, duration=1.5) + fade_out
-        seq_c.start(self.copyright_label)
-
-        seq_s = fade_in + Animation(opacity=1, duration=1.5) + fade_out
-        seq_s.start(self.spinner_scatter)
+    def start_fade_out(self, dt):
+        fade_out = Animation(opacity=0, duration=2)
+        fade_out.bind(on_complete=self._go_menu)
+        fade_out.start(self.layout)   # fades the whole FloatLayout (all children)
 
     def _go_menu(self, *args):
         self.spin_anim.repeat = False
@@ -493,7 +484,6 @@ class GameScreen(Screen):
         self.manager.current = 'menu'
 
 
-# ---------- App ----------
 class RedAffairApp(App):
     current_theme = DARK_THEME
 
