@@ -8,7 +8,7 @@ import webbrowser
 from io import StringIO
 
 from kivy.app import App
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
@@ -18,6 +18,7 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
+from kivy.animation import Animation
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
 
@@ -51,6 +52,38 @@ LIGHT_THEME = {
 }
 
 
+# ---------- Splash Screen ----------
+class SplashScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas.before:
+            Color(0, 0, 0, 1)
+            self.bg_rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_bg, pos=self._update_bg)
+
+        self.title_label = Label(
+            text='THE RED AFFAIR',
+            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
+            font_size='30sp',
+            color=(1, 0, 0, 1),
+            opacity=0
+        )
+        self.add_widget(self.title_label)
+
+    def _update_bg(self, instance, value):
+        self.bg_rect.size = instance.size
+        self.bg_rect.pos = instance.pos
+
+    def on_enter(self):
+        anim = Animation(opacity=1, duration=1.5) + Animation(opacity=1, duration=1.5) + Animation(opacity=0, duration=1.5)
+        anim.bind(on_complete=self._go_menu)
+        anim.start(self.title_label)
+
+    def _go_menu(self, *args):
+        self.manager.current = 'menu'
+
+
+# ---------- Game I/O ----------
 class GameStdout(StringIO):
     def __init__(self, app_ref, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,6 +110,7 @@ class GameStdin:
         return self.readline()
 
 
+# ---------- Game UI ----------
 class GameUI(BoxLayout):
     def __init__(self, theme, back_callback, **kwargs):
         super().__init__(**kwargs, orientation='vertical')
@@ -221,6 +255,7 @@ class GameUI(BoxLayout):
         self.back_callback()
 
 
+# ---------- Menu Screen ----------
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -285,6 +320,7 @@ class MenuScreen(Screen):
         webbrowser.open('https://www.paypal.com/donate?hosted_button_id=EXAMPLE')
 
 
+# ---------- Settings Screen ----------
 class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -345,6 +381,7 @@ class SettingsScreen(Screen):
         self.manager.current = 'menu'
 
 
+# ---------- Game Screen ----------
 class GameScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -380,14 +417,17 @@ class GameScreen(Screen):
         self.manager.current = 'menu'
 
 
+# ---------- App ----------
 class RedAffairApp(App):
     current_theme = DARK_THEME
 
     def build(self):
-        sm = ScreenManager()
+        sm = ScreenManager(transition=FadeTransition(duration=0.5))
+        sm.add_widget(SplashScreen(name='splash'))
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(GameScreen(name='game'))
         sm.add_widget(SettingsScreen(name='settings'))
+        sm.current = 'splash'
         return sm
 
 
