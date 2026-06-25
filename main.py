@@ -78,8 +78,15 @@ class CRTOverlay(Widget):
         with self.canvas:
             self.flash_color = Color(1, 0, 0, 0)
             self.flash_rect = Rectangle(size=self.size, pos=self.pos)
+
+            self.chroma_red_color = Color(1, 0, 0, 0)
+            self.chroma_red_rect = Rectangle(size=self.size, pos=self.pos)
+            self.chroma_blue_color = Color(0, 0, 1, 0)
+            self.chroma_blue_rect = Rectangle(size=self.size, pos=self.pos)
+
             Color(1, 1, 1, 1)
             self.scan_rect = Rectangle(texture=self.scan_tex, size=self.size, pos=self.pos)
+
             Color(1, 0, 0, 0.03)
             self.edge_left = Rectangle(size=(3, self.height), pos=(0, 0))
             Color(0, 0, 1, 0.03)
@@ -95,12 +102,17 @@ class CRTOverlay(Widget):
         self.glitch_timer = None
         self.scroll_timer = None
         self.flash_timer = None
+        self.hard_glitch_timer = None
 
     def _update_rects(self, instance, value):
         self.scan_rect.size = instance.size
         self.scan_rect.pos = instance.pos
         self.flash_rect.size = instance.size
         self.flash_rect.pos = instance.pos
+        self.chroma_red_rect.size = instance.size
+        self.chroma_red_rect.pos = instance.pos
+        self.chroma_blue_rect.size = instance.size
+        self.chroma_blue_rect.pos = instance.pos
         self.edge_left.size = (3, instance.height)
         self.edge_left.pos = (0, 0)
         self.edge_right.size = (3, instance.height)
@@ -112,7 +124,7 @@ class CRTOverlay(Widget):
 
     def on_show(self):
         self.scroll_timer = Clock.schedule_interval(self._scroll_scanlines, 1/30.0)
-        self.glitch_timer = Clock.schedule_interval(self._random_glitch, 0.15)
+        self.glitch_timer = Clock.schedule_interval(self._random_glitch, 0.2)
 
     def on_hide(self):
         if self.scroll_timer:
@@ -121,7 +133,9 @@ class CRTOverlay(Widget):
             self.glitch_timer.cancel()
         if self.flash_timer:
             self.flash_timer.cancel()
-            self.flash_color.rgba = (1, 0, 0, 0)
+        if self.hard_glitch_timer:
+            self.hard_glitch_timer.cancel()
+        self._reset_glitch()
 
     def _scroll_scanlines(self, dt):
         self.scan_offset += dt * 0.5
@@ -135,28 +149,45 @@ class CRTOverlay(Widget):
 
     def _random_glitch(self, dt):
         if py_random.random() < 0.2:
-            shift_x = py_random.randint(-15, 15)
-            shift_y = py_random.randint(-3, 3)
-            self.scan_rect.pos = (self.pos[0] + shift_x, self.pos[1] + shift_y)
-            if py_random.random() < 0.4:
-                self._start_flash()
+            self._trigger_hard_glitch()
         else:
-            self.scan_rect.pos = self.pos
+            if py_random.random() < 0.3:
+                self.scan_rect.pos = (self.pos[0] + py_random.randint(-5, 5),
+                                      self.pos[1] + py_random.randint(-2, 2))
+            else:
+                self.scan_rect.pos = self.pos
             self.edge_left.pos = (py_random.randint(-1, 1), 0)
             self.edge_right.pos = (self.width - 3 + py_random.randint(-1, 1), 0)
 
-    def _start_flash(self):
-        if self.flash_timer:
-            self.flash_timer.cancel()
-        if py_random.random() < 0.5:
-            self.flash_color.rgba = (1, 0, 0, 0.15)
-        else:
-            self.flash_color.rgba = (0, 0, 1, 0.15)
-        self.flash_timer = Clock.schedule_once(self._end_flash, 0.05)
+    def _trigger_hard_glitch(self):
+        if self.hard_glitch_timer:
+            self.hard_glitch_timer.cancel()
 
-    def _end_flash(self, dt):
+        shift = py_random.randint(8, 25) * (1 if py_random.random() < 0.5 else -1)
+
+        self.chroma_red_color.rgba = (1, 0, 0, 0.15)
+        self.chroma_red_rect.pos = (self.pos[0] - shift, self.pos[1])
+
+        self.chroma_blue_color.rgba = (0, 0, 1, 0.15)
+        self.chroma_blue_rect.pos = (self.pos[0] + shift, self.pos[1])
+
+        self.scan_rect.pos = (self.pos[0] + shift // 2, self.pos[1])
+
+        if py_random.random() < 0.5:
+            self.flash_color.rgba = (1, 0, 0, 0.1) if py_random.random() < 0.5 else (0, 0, 1, 0.1)
+        else:
+            self.flash_color.rgba = (1, 0, 0, 0)
+
+        self.hard_glitch_timer = Clock.schedule_once(self._reset_glitch, 0.07)
+
+    def _reset_glitch(self, dt=None):
+        self.chroma_red_color.rgba = (1, 0, 0, 0)
+        self.chroma_red_rect.pos = self.pos
+        self.chroma_blue_color.rgba = (0, 0, 1, 0)
+        self.chroma_blue_rect.pos = self.pos
+        self.scan_rect.pos = self.pos
         self.flash_color.rgba = (1, 0, 0, 0)
-        self.flash_timer = None
+        self.hard_glitch_timer = None
 
 
 # ---------- Splash Screen ----------
