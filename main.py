@@ -65,13 +65,13 @@ class CRTOverlay(Widget):
         super().__init__(**kwargs)
         self.size_hint = (1, 1)
 
-        # Create a scanline texture (2px height stripe pattern)
+        # Scanline texture – 2px dark, 2px transparent – alpha 80 (more visible)
         scan_tex = Texture.create(size=(4, 4))
         scan_buf = bytes([
-            0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,    # row 0: dark with alpha
-            0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,     # row 1: transparent
-            0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,    # row 2: dark
-            0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0      # row 3: transparent
+            0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,
+            0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,
+            0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,
+            0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0
         ])
         scan_tex.blit_buffer(scan_buf, colorfmt='rgba', bufferfmt='ubyte')
         scan_tex.wrap = 'repeat'
@@ -80,8 +80,6 @@ class CRTOverlay(Widget):
             self.scan_rect = Rectangle(texture=scan_tex, size=self.size, pos=self.pos)
 
         self.bind(size=self._update_rect, pos=self._update_rect)
-
-        # Glitch timer
         self.glitch_event = None
 
     def _update_rect(self, instance, value):
@@ -96,9 +94,8 @@ class CRTOverlay(Widget):
             self.glitch_event.cancel()
 
     def _random_glitch(self, dt):
-        # Randomly shift the overlay a few pixels horizontally
         if py_random.random() < 0.15:
-            offset = (py_random.randint(-5, 5), py_random.randint(-2, 2))
+            offset = (py_random.randint(-8, 8), py_random.randint(-3, 3))
             self.scan_rect.pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
         else:
             self.scan_rect.pos = self.pos
@@ -478,8 +475,8 @@ class SettingsScreen(Screen):
         layout.add_widget(self.theme_toggle)
 
         self.dynamic_lighting_toggle = ToggleButton(
-            text='Dynamic Lighting: OFF',
-            state='normal',
+            text='Dynamic Lighting: ON',
+            state='down',
             font_size='20sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
@@ -576,16 +573,17 @@ class RootWidget(FloatLayout):
         self.sm.current = 'splash'
         self.add_widget(self.sm)
 
-        # CRT overlay always present (but hidden)
+        # CRT overlay always present – will be shown/hidden by the app
         self.crt_overlay = CRTOverlay()
-        self.crt_overlay.opacity = 0.0
+        self.crt_overlay.opacity = 1.0   # visible by default
         self.add_widget(self.crt_overlay)
+        self.crt_overlay.on_show()       # start glitch timer
 
 
 # ---------- App ----------
 class RedAffairApp(App):
     current_theme = DARK_THEME
-    crt_enabled = False
+    crt_enabled = True   # default ON
 
     def build(self):
         self.root_widget = RootWidget()
