@@ -59,46 +59,102 @@ LIGHT_THEME = {
 }
 
 
-# ---------- Simple CRT Overlay (no shader) ----------
+# ---------- CRT Overlay ----------
 class CRTOverlay(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (1, 1)
 
-        # Scanline texture – 2px dark, 2px transparent – alpha 80 (more visible)
-        scan_tex = Texture.create(size=(4, 4))
+        self.scan_tex = Texture.create(size=(4, 4))
         scan_buf = bytes([
-            0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,
+            0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,
             0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,
-            0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,  0, 0, 0, 80,
+            0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,
             0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0
         ])
-        scan_tex.blit_buffer(scan_buf, colorfmt='rgba', bufferfmt='ubyte')
-        scan_tex.wrap = 'repeat'
+        self.scan_tex.blit_buffer(scan_buf, colorfmt='rgba', bufferfmt='ubyte')
+        self.scan_tex.wrap = 'repeat'
 
         with self.canvas:
-            self.scan_rect = Rectangle(texture=scan_tex, size=self.size, pos=self.pos)
+            Color(1, 0, 0, 0)
+            self.flash_rect = Rectangle(size=self.size, pos=self.pos)
+            Color(1, 1, 1, 1)
+            self.scan_rect = Rectangle(texture=self.scan_tex, size=self.size, pos=self.pos)
+            Color(1, 0, 0, 0.03)
+            self.edge_left = Rectangle(size=(3, self.height), pos=(0, 0))
+            Color(0, 0, 1, 0.03)
+            self.edge_right = Rectangle(size=(3, self.height), pos=(self.width-3, 0))
+            Color(1, 0, 0, 0.02)
+            self.edge_top = Rectangle(size=(self.width, 2), pos=(0, self.height-2))
+            Color(0, 0, 1, 0.02)
+            self.edge_bottom = Rectangle(size=(self.width, 2), pos=(0, 0))
 
-        self.bind(size=self._update_rect, pos=self._update_rect)
-        self.glitch_event = None
+        self.bind(size=self._update_rects, pos=self._update_rects)
 
-    def _update_rect(self, instance, value):
+        self.scan_offset = 0.0
+        self.glitch_timer = None
+        self.scroll_timer = None
+        self.flash_timer = None
+
+    def _update_rects(self, instance, value):
         self.scan_rect.size = instance.size
         self.scan_rect.pos = instance.pos
+        self.flash_rect.size = instance.size
+        self.flash_rect.pos = instance.pos
+        self.edge_left.size = (3, instance.height)
+        self.edge_left.pos = (0, 0)
+        self.edge_right.size = (3, instance.height)
+        self.edge_right.pos = (instance.width - 3, 0)
+        self.edge_top.size = (instance.width, 2)
+        self.edge_top.pos = (0, instance.height - 2)
+        self.edge_bottom.size = (instance.width, 2)
+        self.edge_bottom.pos = (0, 0)
 
     def on_show(self):
-        self.glitch_event = Clock.schedule_interval(self._random_glitch, 0.2)
+        self.scroll_timer = Clock.schedule_interval(self._scroll_scanlines, 1/30.0)
+        self.glitch_timer = Clock.schedule_interval(self._random_glitch, 0.15)
 
     def on_hide(self):
-        if self.glitch_event:
-            self.glitch_event.cancel()
+        if self.scroll_timer:
+            self.scroll_timer.cancel()
+        if self.glitch_timer:
+            self.glitch_timer.cancel()
+        if self.flash_timer:
+            self.flash_timer.cancel()
+            self.flash_rect.color = (1, 0, 0, 0)
+
+    def _scroll_scanlines(self, dt):
+        self.scan_offset += dt * 0.5
+        self.scan_offset %= 1.0
+        self.scan_rect.tex_coords = (
+            0, self.scan_offset,
+            1, self.scan_offset,
+            1, self.scan_offset + 1.0,
+            0, self.scan_offset + 1.0
+        )
 
     def _random_glitch(self, dt):
-        if py_random.random() < 0.15:
-            offset = (py_random.randint(-8, 8), py_random.randint(-3, 3))
-            self.scan_rect.pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+        if py_random.random() < 0.2:
+            shift_x = py_random.randint(-15, 15)
+            shift_y = py_random.randint(-3, 3)
+            self.scan_rect.pos = (self.pos[0] + shift_x, self.pos[1] + shift_y)
+            if py_random.random() < 0.4:
+                self._start_flash()
         else:
             self.scan_rect.pos = self.pos
+            self.edge_left.pos = (py_random.randint(-1, 1), 0)
+            self.edge_right.pos = (self.width - 3 + py_random.randint(-1, 1), 0)
+
+    def _start_flash(self):
+        if self.flash_timer:
+            self.flash_timer.cancel()
+        color = (1, 0, 0, 0.15) if py_random.random() < 0.5 else (0, 0, 1, 0.15)
+        self.flash_rect.color = color
+        self.flash_timer = Clock.schedule_once(self._end_flash, 0.05)
+
+    def _end_flash(self, dt):
+        self.flash_rect.color = (1, 0, 0, 0)
+        self.flash_timer = None
 
 
 # ---------- Splash Screen ----------
@@ -573,17 +629,16 @@ class RootWidget(FloatLayout):
         self.sm.current = 'splash'
         self.add_widget(self.sm)
 
-        # CRT overlay always present – will be shown/hidden by the app
         self.crt_overlay = CRTOverlay()
-        self.crt_overlay.opacity = 1.0   # visible by default
+        self.crt_overlay.opacity = 1.0
         self.add_widget(self.crt_overlay)
-        self.crt_overlay.on_show()       # start glitch timer
+        self.crt_overlay.on_show()
 
 
 # ---------- App ----------
 class RedAffairApp(App):
     current_theme = DARK_THEME
-    crt_enabled = True   # default ON
+    crt_enabled = True
 
     def build(self):
         self.root_widget = RootWidget()
