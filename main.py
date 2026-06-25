@@ -65,6 +65,7 @@ class SplashScreen(Screen):
             self.bg_rect = Rectangle(size=self.size, pos=self.pos)
         self.layout.bind(size=self._update_bg_rect, pos=self._update_bg_rect)
 
+        # Background image
         self.bg_image = Image(source='assets/splash_bg.png',
                               allow_stretch=True, keep_ratio=False,
                               size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
@@ -96,6 +97,7 @@ class SplashScreen(Screen):
             outline.pos = (dx, dy)
             self.title_container.add_widget(outline)
 
+        # Main red title
         self.title_label = Label(text=title_text,
                                  font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                  font_size=title_font_size,
@@ -109,7 +111,7 @@ class SplashScreen(Screen):
         self.layout.add_widget(self.title_container)
 
         # Copyright / studio
-        self.copyright_label = Label(text='DotDropper © 2026',
+        self.copyright_label = Label(text='Studio Name © 2026',
                                      font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                      font_size='12sp', color=(1, 0, 0, 1),
                                      size_hint=(None, None),
@@ -484,6 +486,7 @@ class GameScreen(Screen):
         self.manager.current = 'menu'
 
 
+# ---------- App ----------
 class RedAffairApp(App):
     current_theme = DARK_THEME
 
