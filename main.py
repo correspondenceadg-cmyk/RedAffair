@@ -76,7 +76,7 @@ class CRTOverlay(Widget):
         self.scan_tex.wrap = 'repeat'
 
         with self.canvas:
-            Color(1, 0, 0, 0)
+            self.flash_color = Color(1, 0, 0, 0)
             self.flash_rect = Rectangle(size=self.size, pos=self.pos)
             Color(1, 1, 1, 1)
             self.scan_rect = Rectangle(texture=self.scan_tex, size=self.size, pos=self.pos)
@@ -121,7 +121,7 @@ class CRTOverlay(Widget):
             self.glitch_timer.cancel()
         if self.flash_timer:
             self.flash_timer.cancel()
-            self.flash_rect.color = (1, 0, 0, 0)
+            self.flash_color.rgba = (1, 0, 0, 0)
 
     def _scroll_scanlines(self, dt):
         self.scan_offset += dt * 0.5
@@ -148,12 +148,14 @@ class CRTOverlay(Widget):
     def _start_flash(self):
         if self.flash_timer:
             self.flash_timer.cancel()
-        color = (1, 0, 0, 0.15) if py_random.random() < 0.5 else (0, 0, 1, 0.15)
-        self.flash_rect.color = color
+        if py_random.random() < 0.5:
+            self.flash_color.rgba = (1, 0, 0, 0.15)
+        else:
+            self.flash_color.rgba = (0, 0, 1, 0.15)
         self.flash_timer = Clock.schedule_once(self._end_flash, 0.05)
 
     def _end_flash(self, dt):
-        self.flash_rect.color = (1, 0, 0, 0)
+        self.flash_color.rgba = (1, 0, 0, 0)
         self.flash_timer = None
 
 
