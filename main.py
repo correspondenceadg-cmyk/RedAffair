@@ -76,17 +76,21 @@ class CRTOverlay(Widget):
         self.scan_tex.wrap = 'repeat'
 
         with self.canvas:
-            self.flash_color = Color(1, 0, 0, 0)
-            self.flash_rect = Rectangle(size=self.size, pos=self.pos)
-
+            # Chromatic aberration bars (hidden)
             self.chroma_red_color = Color(1, 0, 0, 0)
             self.chroma_red_rect = Rectangle(size=self.size, pos=self.pos)
             self.chroma_blue_color = Color(0, 0, 1, 0)
             self.chroma_blue_rect = Rectangle(size=self.size, pos=self.pos)
 
+            # Glitch strip (horizontal tear)
+            self.strip_color = Color(1, 1, 1, 0)
+            self.strip_rect = Rectangle(size=(self.width, 10), pos=(0, 0))
+
+            # Scanlines (always visible)
             Color(1, 1, 1, 1)
             self.scan_rect = Rectangle(texture=self.scan_tex, size=self.size, pos=self.pos)
 
+            # Static edge fringing
             Color(1, 0, 0, 0.03)
             self.edge_left = Rectangle(size=(3, self.height), pos=(0, 0))
             Color(0, 0, 1, 0.03)
@@ -101,18 +105,16 @@ class CRTOverlay(Widget):
         self.scan_offset = 0.0
         self.glitch_timer = None
         self.scroll_timer = None
-        self.flash_timer = None
         self.hard_glitch_timer = None
 
     def _update_rects(self, instance, value):
         self.scan_rect.size = instance.size
         self.scan_rect.pos = instance.pos
-        self.flash_rect.size = instance.size
-        self.flash_rect.pos = instance.pos
         self.chroma_red_rect.size = instance.size
         self.chroma_red_rect.pos = instance.pos
         self.chroma_blue_rect.size = instance.size
         self.chroma_blue_rect.pos = instance.pos
+        self.strip_rect.size = (instance.width, self.strip_rect.size[1])
         self.edge_left.size = (3, instance.height)
         self.edge_left.pos = (0, 0)
         self.edge_right.size = (3, instance.height)
@@ -131,8 +133,6 @@ class CRTOverlay(Widget):
             self.scroll_timer.cancel()
         if self.glitch_timer:
             self.glitch_timer.cancel()
-        if self.flash_timer:
-            self.flash_timer.cancel()
         if self.hard_glitch_timer:
             self.hard_glitch_timer.cancel()
         self._reset_glitch()
@@ -151,11 +151,7 @@ class CRTOverlay(Widget):
         if py_random.random() < 0.2:
             self._trigger_hard_glitch()
         else:
-            if py_random.random() < 0.3:
-                self.scan_rect.pos = (self.pos[0] + py_random.randint(-5, 5),
-                                      self.pos[1] + py_random.randint(-2, 2))
-            else:
-                self.scan_rect.pos = self.pos
+            # Subtle edge jitter
             self.edge_left.pos = (py_random.randint(-1, 1), 0)
             self.edge_right.pos = (self.width - 3 + py_random.randint(-1, 1), 0)
 
@@ -163,20 +159,21 @@ class CRTOverlay(Widget):
         if self.hard_glitch_timer:
             self.hard_glitch_timer.cancel()
 
-        shift = py_random.randint(8, 25) * (1 if py_random.random() < 0.5 else -1)
+        shift = py_random.randint(10, 30) * (1 if py_random.random() < 0.5 else -1)
 
-        self.chroma_red_color.rgba = (1, 0, 0, 0.15)
+        # Chromatic aberration bars
+        self.chroma_red_color.rgba = (1, 0, 0, 0.3)
         self.chroma_red_rect.pos = (self.pos[0] - shift, self.pos[1])
 
-        self.chroma_blue_color.rgba = (0, 0, 1, 0.15)
+        self.chroma_blue_color.rgba = (0, 0, 1, 0.3)
         self.chroma_blue_rect.pos = (self.pos[0] + shift, self.pos[1])
 
-        self.scan_rect.pos = (self.pos[0] + shift // 2, self.pos[1])
-
-        if py_random.random() < 0.5:
-            self.flash_color.rgba = (1, 0, 0, 0.1) if py_random.random() < 0.5 else (0, 0, 1, 0.1)
-        else:
-            self.flash_color.rgba = (1, 0, 0, 0)
+        # Horizontal tear strip
+        strip_height = py_random.randint(10, 40)
+        strip_y = py_random.randint(0, max(1, int(self.height) - strip_height))
+        self.strip_rect.size = (self.width, strip_height)
+        self.strip_rect.pos = (self.pos[0] + shift * 1.5, self.pos[1] + strip_y)
+        self.strip_color.rgba = (1, 0.8, 0.8, 0.25)
 
         self.hard_glitch_timer = Clock.schedule_once(self._reset_glitch, 0.07)
 
@@ -185,8 +182,8 @@ class CRTOverlay(Widget):
         self.chroma_red_rect.pos = self.pos
         self.chroma_blue_color.rgba = (0, 0, 1, 0)
         self.chroma_blue_rect.pos = self.pos
-        self.scan_rect.pos = self.pos
-        self.flash_color.rgba = (1, 0, 0, 0)
+        self.strip_color.rgba = (1, 1, 1, 0)
+        self.strip_rect.pos = (0, 0)
         self.hard_glitch_timer = None
 
 
