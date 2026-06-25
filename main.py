@@ -112,7 +112,7 @@ class SplashScreen(Screen):
         self.title_box.bind(size=self._keep_title_centered)
         self.layout.add_widget(self.title_box)
 
-        # Spinner – continuous rotation using a Scatter + Clock
+
         self.spinner_scatter = Scatter(do_rotation=False, do_scale=False, do_translation=False,
                                        size_hint=(None, None), size=(64, 64),
                                        pos_hint={'center_x': 0.5, 'center_y': 0.3})
@@ -122,7 +122,7 @@ class SplashScreen(Screen):
         self.layout.add_widget(self.spinner_scatter)
 
         # Copyright at bottom
-        self.copyright_label = Label(text='Studio Name © 2026',
+        self.copyright_label = Label(text='TranSchizo Studios © 2026',
                                      font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                      font_size='11sp', color=(1, 0, 0, 1),
                                      size_hint=(None, None),
