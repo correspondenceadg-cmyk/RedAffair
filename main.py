@@ -24,6 +24,7 @@ from kivy.uix.widget import Widget
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
+from kivy.graphics.texture import Texture
 from kivy.animation import Animation
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
@@ -57,113 +58,50 @@ LIGHT_THEME = {
     'cursor': (0, 0, 1, 1)
 }
 
-# --------------- Safe CRT shader import ---------------
-CRT_AVAILABLE = False
-CRTOverlay = None
 
-try:
-    from kivy.graphics.shader import Shader
-    CRT_AVAILABLE = True
+# ---------- Simple CRT Overlay (no shader) ----------
+class CRTOverlay(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (1, 1)
 
-    CRT_FS = '''
-#ifdef GL_ES
-    precision highp float;
-#endif
+        # Create a scanline texture (2px height stripe pattern)
+        scan_tex = Texture.create(size=(4, 4))
+        scan_buf = bytes([
+            0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,    # row 0: dark with alpha
+            0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,     # row 1: transparent
+            0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,  0, 0, 0, 40,    # row 2: dark
+            0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0      # row 3: transparent
+        ])
+        scan_tex.blit_buffer(scan_buf, colorfmt='rgba', bufferfmt='ubyte')
+        scan_tex.wrap = 'repeat'
 
-out vec4 fragColor;
-uniform vec2 u_resolution;
-uniform float u_time;
-uniform float u_glitch_intensity;
+        with self.canvas:
+            self.scan_rect = Rectangle(texture=scan_tex, size=self.size, pos=self.pos)
 
-float rand(vec2 co) {
-    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
-}
+        self.bind(size=self._update_rect, pos=self._update_rect)
 
-float block_noise(vec2 p, float block_size) {
-    vec2 block = floor(p / block_size);
-    return rand(block + floor(u_time * 10.0));
-}
+        # Glitch timer
+        self.glitch_event = None
 
-void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+    def _update_rect(self, instance, value):
+        self.scan_rect.size = instance.size
+        self.scan_rect.pos = instance.pos
 
-    float glitch = 0.0;
-    if (rand(floor(vec2(uv.y * 200.0, u_time * 5.0))) < u_glitch_intensity * 0.3) {
-        glitch = (rand(vec2(floor(uv.y * 200.0), u_time)) - 0.5) * 0.05 * u_glitch_intensity;
-    }
-    uv.x += glitch;
+    def on_show(self):
+        self.glitch_event = Clock.schedule_interval(self._random_glitch, 0.2)
 
-    float scanline = sin(uv.y * u_resolution.y * 3.14159) * 0.5 + 0.5;
-    scanline = mix(1.0, scanline, 0.2);
+    def on_hide(self):
+        if self.glitch_event:
+            self.glitch_event.cancel()
 
-    float vignette = smoothstep(0.8, 0.2, length(uv - 0.5) * 1.8);
-    vignette = mix(1.0, vignette, 0.3);
-
-    float noise = block_noise(gl_FragCoord.xy, 4.0) * 0.15;
-
-    float chroma_strength = length(uv - 0.5) * 0.02;
-    float r_shift = chroma_strength * sin(u_time * 2.0) * 0.5 + 0.5;
-    float b_shift = -chroma_strength * cos(u_time * 2.0) * 0.5 + 0.5;
-
-    float alpha = 0.0;
-    alpha = noise * 0.3;
-    alpha += (1.0 - scanline) * 0.15;
-    alpha += (1.0 - vignette) * 0.25;
-
-    vec4 overlay_color = vec4(0.0, 0.0, 0.0, alpha);
-
-    if (abs(uv.x - 0.5) > 0.4 || abs(uv.y - 0.5) > 0.4) {
-        overlay_color.r += 0.05 * r_shift;
-        overlay_color.b += 0.05 * b_shift;
-    }
-
-    fragColor = overlay_color;
-}
-'''
-
-    class CRTOverlay(Widget):
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            self.size_hint = (1, 1)
-            with self.canvas:
-                self.shader = Shader(fs=CRT_FS)
-                self.shader['u_resolution'] = (Window.width, Window.height)
-                self.shader['u_time'] = 0.0
-                self.shader['u_glitch_intensity'] = 0.0
-                self.rect = Rectangle(size=self.size, pos=self.pos)
-            self.bind(size=self._update_rect, pos=self._update_rect)
-            self.time_event = None
-            self.glitch_event = None
-            self.time_acc = 0.0
-
-        def _update_rect(self, instance, value):
-            self.rect.size = instance.size
-            self.rect.pos = instance.pos
-            self.shader['u_resolution'] = (instance.size[0], instance.size[1])
-
-        def on_show(self):
-            self.time_event = Clock.schedule_interval(self._update_shader, 1/60.0)
-            self.glitch_event = Clock.schedule_interval(self._random_glitch, 0.5)
-
-        def on_hide(self):
-            if self.time_event:
-                self.time_event.cancel()
-            if self.glitch_event:
-                self.glitch_event.cancel()
-
-        def _update_shader(self, dt):
-            self.time_acc += dt
-            self.shader['u_time'] = self.time_acc
-
-        def _random_glitch(self, dt):
-            if py_random.random() < 0.3:
-                self.shader['u_glitch_intensity'] = py_random.random() * 0.8 + 0.2
-            else:
-                self.shader['u_glitch_intensity'] *= 0.9
-
-except Exception as shader_err:
-    log_crash(f"CRT shader load failed: {traceback.format_exc()}")
-    CRT_AVAILABLE = False
+    def _random_glitch(self, dt):
+        # Randomly shift the overlay a few pixels horizontally
+        if py_random.random() < 0.15:
+            offset = (py_random.randint(-5, 5), py_random.randint(-2, 2))
+            self.scan_rect.pos = (self.pos[0] + offset[0], self.pos[1] + offset[1])
+        else:
+            self.scan_rect.pos = self.pos
 
 
 # ---------- Splash Screen ----------
@@ -185,9 +123,7 @@ class SplashScreen(Screen):
                                         pos_hint={'center_x': 0.5, 'center_y': 0.5})
         title_text = 'THE RED AFFAIR'
         title_font_size = '36sp'
-
         self.title_labels = []
-
         offsets = [(-2,0), (2,0), (0,-2), (0,2), (-1,-1), (1,1)]
         for dx, dy in offsets:
             lbl = Label(text=title_text,
@@ -200,7 +136,6 @@ class SplashScreen(Screen):
             lbl.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
             self.title_box.add_widget(lbl)
             self.title_labels.append(lbl)
-
         self.red_title = Label(text=title_text,
                                font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                font_size=title_font_size,
@@ -211,7 +146,6 @@ class SplashScreen(Screen):
         self.red_title.bind(texture_size=lambda instance, size: setattr(instance, 'size', size))
         self.title_box.add_widget(self.red_title)
         self.title_labels.append(self.red_title)
-
         self.red_title.bind(texture_size=self._adjust_title_box_size)
         self.title_box.bind(size=self._keep_title_centered)
         self.layout.add_widget(self.title_box)
@@ -241,8 +175,7 @@ class SplashScreen(Screen):
         self.bg_rect.pos = instance.pos
 
     def _adjust_title_box_size(self, *args):
-        max_w = 0
-        max_h = 0
+        max_w, max_h = 0, 0
         for lbl in self.title_labels:
             w = lbl.width + abs(lbl.pos[0])
             h = lbl.height + abs(lbl.pos[1])
@@ -552,9 +485,6 @@ class SettingsScreen(Screen):
             color=(1, 1, 1, 1),
             size_hint=(1, 0.15)
         )
-        if not CRT_AVAILABLE:
-            self.dynamic_lighting_toggle.disabled = True
-            self.dynamic_lighting_toggle.text = 'Dynamic Lighting: Not supported'
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         layout.add_widget(self.dynamic_lighting_toggle)
 
@@ -587,8 +517,6 @@ class SettingsScreen(Screen):
 
     def toggle_dynamic_lighting(self, instance):
         app = App.get_running_app()
-        if not CRT_AVAILABLE:
-            return
         if instance.state == 'down':
             instance.text = 'Dynamic Lighting: ON'
             app.enable_crt()
@@ -636,7 +564,7 @@ class GameScreen(Screen):
         self.manager.current = 'menu'
 
 
-# ---------- Root Widget (SM + CRT) ----------
+# ---------- Root Widget ----------
 class RootWidget(FloatLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -648,11 +576,10 @@ class RootWidget(FloatLayout):
         self.sm.current = 'splash'
         self.add_widget(self.sm)
 
-        self.crt_overlay = None
-        if CRT_AVAILABLE and CRTOverlay is not None:
-            self.crt_overlay = CRTOverlay()
-            self.crt_overlay.opacity = 0.0
-            self.add_widget(self.crt_overlay)
+        # CRT overlay always present (but hidden)
+        self.crt_overlay = CRTOverlay()
+        self.crt_overlay.opacity = 0.0
+        self.add_widget(self.crt_overlay)
 
 
 # ---------- App ----------
@@ -665,16 +592,12 @@ class RedAffairApp(App):
         return self.root_widget
 
     def enable_crt(self):
-        if not CRT_AVAILABLE or not self.root_widget.crt_overlay:
-            return
         if not self.crt_enabled:
             self.crt_enabled = True
             self.root_widget.crt_overlay.opacity = 1.0
             self.root_widget.crt_overlay.on_show()
 
     def disable_crt(self):
-        if not CRT_AVAILABLE or not self.root_widget.crt_overlay:
-            return
         if self.crt_enabled:
             self.crt_enabled = False
             self.root_widget.crt_overlay.opacity = 0.0
