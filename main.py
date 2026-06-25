@@ -5,6 +5,7 @@ import re
 import traceback
 import os
 import webbrowser
+import random as py_random
 from io import StringIO
 
 from kivy.app import App
@@ -19,9 +20,11 @@ from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.image import Image
 from kivy.uix.scatter import Scatter
+from kivy.uix.widget import Widget
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
+from kivy.graphics.shader import Shader
 from kivy.animation import Animation
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
@@ -55,7 +58,105 @@ LIGHT_THEME = {
     'cursor': (0, 0, 1, 1)
 }
 
+# ----- CRT Shader -----
+CRT_FS = '''
+#ifdef GL_ES
+    precision highp float;
+#endif
 
+out vec4 fragColor;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform float u_glitch_intensity;
+
+float rand(vec2 co) {
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+float block_noise(vec2 p, float block_size) {
+    vec2 block = floor(p / block_size);
+    return rand(block + floor(u_time * 10.0));
+}
+
+void main() {
+    vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+
+    float glitch = 0.0;
+    if (rand(floor(vec2(uv.y * 200.0, u_time * 5.0))) < u_glitch_intensity * 0.3) {
+        glitch = (rand(vec2(floor(uv.y * 200.0), u_time)) - 0.5) * 0.05 * u_glitch_intensity;
+    }
+    uv.x += glitch;
+
+    float scanline = sin(uv.y * u_resolution.y * 3.14159) * 0.5 + 0.5;
+    scanline = mix(1.0, scanline, 0.2);
+
+    float vignette = smoothstep(0.8, 0.2, length(uv - 0.5) * 1.8);
+    vignette = mix(1.0, vignette, 0.3);
+
+    float noise = block_noise(gl_FragCoord.xy, 4.0) * 0.15;
+
+    float chroma_strength = length(uv - 0.5) * 0.02;
+    float r_shift = chroma_strength * sin(u_time * 2.0) * 0.5 + 0.5;
+    float b_shift = -chroma_strength * cos(u_time * 2.0) * 0.5 + 0.5;
+
+    float alpha = 0.0;
+    alpha = noise * 0.3;
+    alpha += (1.0 - scanline) * 0.15;
+    alpha += (1.0 - vignette) * 0.25;
+
+    vec4 overlay_color = vec4(0.0, 0.0, 0.0, alpha);
+
+    if (abs(uv.x - 0.5) > 0.4 || abs(uv.y - 0.5) > 0.4) {
+        overlay_color.r += 0.05 * r_shift;
+        overlay_color.b += 0.05 * b_shift;
+    }
+
+    fragColor = overlay_color;
+}
+'''
+
+class CRTOverlay(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (1, 1)
+        with self.canvas:
+            self.shader = Shader(fs=CRT_FS)
+            self.shader['u_resolution'] = (Window.width, Window.height)
+            self.shader['u_time'] = 0.0
+            self.shader['u_glitch_intensity'] = 0.0
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_rect, pos=self._update_rect)
+        self.time_event = None
+        self.glitch_event = None
+        self.time_acc = 0.0
+
+    def _update_rect(self, instance, value):
+        self.rect.size = instance.size
+        self.rect.pos = instance.pos
+        self.shader['u_resolution'] = (instance.size[0], instance.size[1])
+
+    def on_show(self):
+        self.time_event = Clock.schedule_interval(self._update_shader, 1/60.0)
+        self.glitch_event = Clock.schedule_interval(self._random_glitch, 0.5)
+
+    def on_hide(self):
+        if self.time_event:
+            self.time_event.cancel()
+        if self.glitch_event:
+            self.glitch_event.cancel()
+
+    def _update_shader(self, dt):
+        self.time_acc += dt
+        self.shader['u_time'] = self.time_acc
+
+    def _random_glitch(self, dt):
+        if py_random.random() < 0.3:
+            self.shader['u_glitch_intensity'] = py_random.random() * 0.8 + 0.2
+        else:
+            self.shader['u_glitch_intensity'] *= 0.9
+
+
+# ----- Splash Screen -----
 class SplashScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -65,23 +166,18 @@ class SplashScreen(Screen):
             self.bg_rect = Rectangle(size=self.size, pos=self.pos)
         self.layout.bind(size=self._update_bg_rect, pos=self._update_bg_rect)
 
-        # Background image
         self.bg_image = Image(source='assets/splash_bg.png',
                               allow_stretch=True, keep_ratio=False,
                               size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
         self.layout.add_widget(self.bg_image)
 
-        # Title with outline – uses a RelativeLayout that auto‑sizes,
-        # then positioned with center hints → always perfectly centered
         self.title_box = RelativeLayout(size_hint=(None, None),
                                         pos_hint={'center_x': 0.5, 'center_y': 0.5})
         title_text = 'THE RED AFFAIR'
         title_font_size = '36sp'
 
-        # List to hold all labels for size calculation
         self.title_labels = []
 
-        # White outline labels (four directions + diagonals)
         offsets = [(-2,0), (2,0), (0,-2), (0,2), (-1,-1), (1,1)]
         for dx, dy in offsets:
             lbl = Label(text=title_text,
@@ -95,7 +191,6 @@ class SplashScreen(Screen):
             self.title_box.add_widget(lbl)
             self.title_labels.append(lbl)
 
-        # Main red title
         self.red_title = Label(text=title_text,
                                font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                font_size=title_font_size,
@@ -107,11 +202,9 @@ class SplashScreen(Screen):
         self.title_box.add_widget(self.red_title)
         self.title_labels.append(self.red_title)
 
-        # Adjust title_box size to contain all labels
         self.red_title.bind(texture_size=self._adjust_title_box_size)
         self.title_box.bind(size=self._keep_title_centered)
         self.layout.add_widget(self.title_box)
-
 
         self.spinner_scatter = Scatter(do_rotation=False, do_scale=False, do_translation=False,
                                        size_hint=(None, None), size=(64, 64),
@@ -121,7 +214,6 @@ class SplashScreen(Screen):
         self.spinner_scatter.add_widget(self.spinner_image)
         self.layout.add_widget(self.spinner_scatter)
 
-        # Copyright at bottom
         self.copyright_label = Label(text='TranSchizo Studios © 2026',
                                      font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                      font_size='11sp', color=(1, 0, 0, 1),
@@ -131,7 +223,6 @@ class SplashScreen(Screen):
         self.layout.add_widget(self.copyright_label)
 
         self.add_widget(self.layout)
-
         self.spin_event = None
         self.fade_out_event = None
 
@@ -140,7 +231,6 @@ class SplashScreen(Screen):
         self.bg_rect.pos = instance.pos
 
     def _adjust_title_box_size(self, *args):
-        # Compute the bounding box that encompasses all labels
         max_w = 0
         max_h = 0
         for lbl in self.title_labels:
@@ -148,20 +238,17 @@ class SplashScreen(Screen):
             h = lbl.height + abs(lbl.pos[1])
             if w > max_w: max_w = w
             if h > max_h: max_h = h
-        self.title_box.size = (max_w + 4, max_h + 4)   # small padding
+        self.title_box.size = (max_w + 4, max_h + 4)
 
     def _keep_title_centered(self, instance, size):
-        # No extra logic needed; pos_hint handles centering
         pass
 
     def on_enter(self):
-        # Continuous rotation
-        self.spin_event = Clock.schedule_interval(self._rotate_spinner, 1/60)
-        # Fade out after 10 seconds
+        self.spin_event = Clock.schedule_interval(self._rotate_spinner, 1/60.0)
         self.fade_out_event = Clock.schedule_once(self.start_fade_out, 10)
 
     def _rotate_spinner(self, dt):
-        self.spinner_scatter.rotation += 3   # constant speed
+        self.spinner_scatter.rotation += 3
 
     def start_fade_out(self, dt):
         fade_out = Animation(opacity=0, duration=2)
@@ -432,7 +519,7 @@ class SettingsScreen(Screen):
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
             font_size='28sp',
             color=(1, 0, 0, 1),
-            size_hint=(1, 0.3)
+            size_hint=(1, 0.2)
         )
         layout.add_widget(label)
 
@@ -442,17 +529,28 @@ class SettingsScreen(Screen):
             font_size='20sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, 0.2)
+            size_hint=(1, 0.15)
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
         layout.add_widget(self.theme_toggle)
+
+        self.dynamic_lighting_toggle = ToggleButton(
+            text='Dynamic Lighting: OFF',
+            state='normal',
+            font_size='20sp',
+            background_color=(0.2, 0, 0, 1),
+            color=(1, 1, 1, 1),
+            size_hint=(1, 0.15)
+        )
+        self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
+        layout.add_widget(self.dynamic_lighting_toggle)
 
         back_btn = Button(
             text='Back',
             font_size='20sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, 0.2)
+            size_hint=(1, 0.15)
         )
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
@@ -473,6 +571,15 @@ class SettingsScreen(Screen):
             app.current_theme = LIGHT_THEME
         game_screen = self.manager.get_screen('game')
         game_screen.update_theme(app.current_theme)
+
+    def toggle_dynamic_lighting(self, instance):
+        app = App.get_running_app()
+        if instance.state == 'down':
+            instance.text = 'Dynamic Lighting: ON'
+            app.enable_crt()
+        else:
+            instance.text = 'Dynamic Lighting: OFF'
+            app.disable_crt()
 
     def go_back(self, instance):
         self.manager.current = 'menu'
@@ -514,18 +621,43 @@ class GameScreen(Screen):
         self.manager.current = 'menu'
 
 
+# ---------- Root Widget (SM + CRT) ----------
+class RootWidget(FloatLayout):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sm = ScreenManager(transition=FadeTransition(duration=0.5))
+        self.sm.add_widget(SplashScreen(name='splash'))
+        self.sm.add_widget(MenuScreen(name='menu'))
+        self.sm.add_widget(GameScreen(name='game'))
+        self.sm.add_widget(SettingsScreen(name='settings'))
+        self.sm.current = 'splash'
+        self.add_widget(self.sm)
+
+        self.crt_overlay = CRTOverlay()
+        self.crt_overlay.opacity = 0.0
+        self.add_widget(self.crt_overlay)
+
+
 # ---------- App ----------
 class RedAffairApp(App):
     current_theme = DARK_THEME
+    crt_enabled = False
 
     def build(self):
-        sm = ScreenManager(transition=FadeTransition(duration=0.5))
-        sm.add_widget(SplashScreen(name='splash'))
-        sm.add_widget(MenuScreen(name='menu'))
-        sm.add_widget(GameScreen(name='game'))
-        sm.add_widget(SettingsScreen(name='settings'))
-        sm.current = 'splash'
-        return sm
+        self.root_widget = RootWidget()
+        return self.root_widget
+
+    def enable_crt(self):
+        if not self.crt_enabled:
+            self.crt_enabled = True
+            self.root_widget.crt_overlay.opacity = 1.0
+            self.root_widget.crt_overlay.on_show()
+
+    def disable_crt(self):
+        if self.crt_enabled:
+            self.crt_enabled = False
+            self.root_widget.crt_overlay.opacity = 0.0
+            self.root_widget.crt_overlay.on_hide()
 
 
 if __name__ == '__main__':
