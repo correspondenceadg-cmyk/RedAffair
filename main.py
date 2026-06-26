@@ -65,7 +65,6 @@ class CRTOverlay(Widget):
         super().__init__(**kwargs)
         self.size_hint = (1, 1)
 
-        # Scanline texture
         self.scan_tex = Texture.create(size=(4, 4))
         scan_buf = bytes([
             0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,
@@ -77,11 +76,11 @@ class CRTOverlay(Widget):
         self.scan_tex.wrap = 'repeat'
 
         with self.canvas:
-            # Scanlines (always visible)
+            # Scanlines
             Color(1, 1, 1, 1)
             self.scan_rect = Rectangle(texture=self.scan_tex, size=self.size, pos=self.pos)
 
-            # Static edge fringing – store Color instructions for chroma
+            # Edge fringing – stored with Color instructions for chroma manipulation
             self.edge_left_color = Color(1, 0, 0, 0.03)
             self.edge_left = Rectangle(size=(3, self.height), pos=(0, 0))
             self.edge_right_color = Color(0, 0, 1, 0.03)
@@ -91,7 +90,7 @@ class CRTOverlay(Widget):
             self.edge_bottom_color = Color(0, 0, 1, 0.02)
             self.edge_bottom = Rectangle(size=(self.width, 2), pos=(0, 0))
 
-            # Glitch tear strips pool (white lines + red/blue fringes)
+            # Glitch strips pool
             self.glitch_strips = []
             for _ in range(8):
                 color_red = Color(1, 0, 0, 0)
@@ -121,19 +120,15 @@ class CRTOverlay(Widget):
     def _update_rects(self, instance, value):
         self.scan_rect.size = instance.size
         self.scan_rect.pos = instance.pos
-        self.edge_left.size = (3, instance.height)
         self.edge_left.pos = (0, 0)
-        self.edge_right.size = (3, instance.height)
-        self.edge_right.pos = (instance.width - 3, 0)
-        self.edge_top.size = (instance.width, 2)
-        self.edge_top.pos = (0, instance.height - 2)
-        self.edge_bottom.size = (instance.width, 2)
+        self.edge_right.pos = (instance.width - self.edge_right.size[0], 0)
+        self.edge_top.pos = (0, instance.height - self.edge_top.size[1])
         self.edge_bottom.pos = (0, 0)
         for strip in self.glitch_strips:
             strip['rect_line'].size = (instance.width, 2)
 
     def on_show(self):
-        self.scroll_timer = Clock.schedule_interval(self._scroll_scanlines, 1 / 30.0)
+        self.scroll_timer = Clock.schedule_interval(self._scroll_scanlines, 1/30.0)
         self.glitch_timer = Clock.schedule_interval(self._random_glitch, 2.0)
         self.chroma_timer = Clock.schedule_interval(self._trigger_chroma, 4.0)
 
@@ -198,25 +193,49 @@ class CRTOverlay(Widget):
         if self.chroma_reset_timer:
             self.chroma_reset_timer.cancel()
 
-        shift = py_random.randint(12, 25) * (1 if py_random.random() < 0.5 else -1)
+        shift = py_random.randint(15, 30) * (1 if py_random.random() < 0.5 else -1)
 
-        # Shift scanlines to create misalignment illusion
+        # Shift scanlines horizontally
         self.scan_rect.pos = (self.pos[0] + shift, self.pos[1])
 
-        # Increase edge fringing for chromatic effect
+        # Widen edge fringing and shift them opposite to simulate color offset
+        self.edge_left.size = (20, self.height)
+        self.edge_left.pos = (self.pos[0] - shift, self.pos[1])
         self.edge_left_color.rgba = (1, 0, 0, 0.3)
+
+        self.edge_right.size = (20, self.height)
+        self.edge_right.pos = (self.pos[0] + self.width - 20 + shift, self.pos[1])
         self.edge_right_color.rgba = (0, 0, 1, 0.3)
-        self.edge_top_color.rgba = (1, 0, 0, 0.15)
-        self.edge_bottom_color.rgba = (0, 0, 1, 0.15)
+
+        self.edge_top.size = (self.width, 10)
+        self.edge_top.pos = (self.pos[0], self.pos[1] + self.height - 10)
+        self.edge_top_color.rgba = (1, 0, 0, 0.2)
+
+        self.edge_bottom.size = (self.width, 10)
+        self.edge_bottom.pos = (self.pos[0], self.pos[1])
+        self.edge_bottom_color.rgba = (0, 0, 1, 0.2)
 
         self.chroma_reset_timer = Clock.schedule_once(self._reset_chroma, 0.1)
 
     def _reset_chroma(self, dt=None):
         self.scan_rect.pos = self.pos
+
+        self.edge_left.size = (3, self.height)
+        self.edge_left.pos = (0, 0)
         self.edge_left_color.rgba = (1, 0, 0, 0.03)
+
+        self.edge_right.size = (3, self.height)
+        self.edge_right.pos = (self.width - 3, 0)
         self.edge_right_color.rgba = (0, 0, 1, 0.03)
+
+        self.edge_top.size = (self.width, 2)
+        self.edge_top.pos = (0, self.height - 2)
         self.edge_top_color.rgba = (1, 0, 0, 0.02)
+
+        self.edge_bottom.size = (self.width, 2)
+        self.edge_bottom.pos = (0, 0)
         self.edge_bottom_color.rgba = (0, 0, 1, 0.02)
+
         self.chroma_reset_timer = None
 
 
