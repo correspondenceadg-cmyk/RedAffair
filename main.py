@@ -76,17 +76,7 @@ class CRTOverlay(Widget):
         self.scan_tex.wrap = 'repeat'
 
         with self.canvas:
-            # Chromatic aberration bars (hidden)
-            self.chroma_red_color = Color(1, 0, 0, 0)
-            self.chroma_red_rect = Rectangle(size=self.size, pos=self.pos)
-            self.chroma_blue_color = Color(0, 0, 1, 0)
-            self.chroma_blue_rect = Rectangle(size=self.size, pos=self.pos)
-
-            # Glitch strip (horizontal tear)
-            self.strip_color = Color(1, 1, 1, 0)
-            self.strip_rect = Rectangle(size=(self.width, 10), pos=(0, 0))
-
-            # Scanlines (always visible)
+            # Scanlines
             Color(1, 1, 1, 1)
             self.scan_rect = Rectangle(texture=self.scan_tex, size=self.size, pos=self.pos)
 
@@ -100,6 +90,24 @@ class CRTOverlay(Widget):
             Color(0, 0, 1, 0.02)
             self.edge_bottom = Rectangle(size=(self.width, 2), pos=(0, 0))
 
+            # Pre‑allocated glitch strips
+            self.glitch_strips = []
+            for _ in range(8):
+                color_red = Color(1, 0, 0, 0)
+                rect_red = Rectangle(size=(1, 2), pos=(0, 0))
+                color_blue = Color(0, 0, 1, 0)
+                rect_blue = Rectangle(size=(1, 2), pos=(0, 0))
+                color_line = Color(1, 1, 1, 0)
+                rect_line = Rectangle(size=(self.width, 2), pos=(0, 0))
+                self.glitch_strips.append({
+                    'color_red': color_red,
+                    'rect_red': rect_red,
+                    'color_blue': color_blue,
+                    'rect_blue': rect_blue,
+                    'color_line': color_line,
+                    'rect_line': rect_line
+                })
+
         self.bind(size=self._update_rects, pos=self._update_rects)
 
         self.scan_offset = 0.0
@@ -110,11 +118,6 @@ class CRTOverlay(Widget):
     def _update_rects(self, instance, value):
         self.scan_rect.size = instance.size
         self.scan_rect.pos = instance.pos
-        self.chroma_red_rect.size = instance.size
-        self.chroma_red_rect.pos = instance.pos
-        self.chroma_blue_rect.size = instance.size
-        self.chroma_blue_rect.pos = instance.pos
-        self.strip_rect.size = (instance.width, self.strip_rect.size[1])
         self.edge_left.size = (3, instance.height)
         self.edge_left.pos = (0, 0)
         self.edge_right.size = (3, instance.height)
@@ -123,6 +126,8 @@ class CRTOverlay(Widget):
         self.edge_top.pos = (0, instance.height - 2)
         self.edge_bottom.size = (instance.width, 2)
         self.edge_bottom.pos = (0, 0)
+        for strip in self.glitch_strips:
+            strip['rect_line'].size = (instance.width, 2)
 
     def on_show(self):
         self.scroll_timer = Clock.schedule_interval(self._scroll_scanlines, 1/30.0)
@@ -149,41 +154,35 @@ class CRTOverlay(Widget):
 
     def _random_glitch(self, dt):
         if py_random.random() < 0.2:
-            self._trigger_hard_glitch()
-        else:
-            # Subtle edge jitter
-            self.edge_left.pos = (py_random.randint(-1, 1), 0)
-            self.edge_right.pos = (self.width - 3 + py_random.randint(-1, 1), 0)
+            self._trigger_tear_glitch()
 
-    def _trigger_hard_glitch(self):
+    def _trigger_tear_glitch(self):
         if self.hard_glitch_timer:
             self.hard_glitch_timer.cancel()
-
+        strip = py_random.choice(self.glitch_strips)
+        strip_height = 2
+        strip_y = py_random.randint(0, max(1, int(self.height) - strip_height))
         shift = py_random.randint(10, 30) * (1 if py_random.random() < 0.5 else -1)
 
-        # Chromatic aberration bars
-        self.chroma_red_color.rgba = (1, 0, 0, 0.3)
-        self.chroma_red_rect.pos = (self.pos[0] - shift, self.pos[1])
+        strip['color_line'].rgba = (1, 1, 1, 0.3)
+        strip['rect_line'].size = (self.width, strip_height)
+        strip['rect_line'].pos = (self.pos[0] + shift, self.pos[1] + strip_y)
 
-        self.chroma_blue_color.rgba = (0, 0, 1, 0.3)
-        self.chroma_blue_rect.pos = (self.pos[0] + shift, self.pos[1])
+        strip['color_red'].rgba = (1, 0, 0, 0.25)
+        strip['rect_red'].size = (abs(shift) + 2, strip_height)
+        strip['rect_red'].pos = (self.pos[0] - shift, self.pos[1] + strip_y)
 
-        # Horizontal tear strip
-        strip_height = py_random.randint(10, 40)
-        strip_y = py_random.randint(0, max(1, int(self.height) - strip_height))
-        self.strip_rect.size = (self.width, strip_height)
-        self.strip_rect.pos = (self.pos[0] + shift * 1.5, self.pos[1] + strip_y)
-        self.strip_color.rgba = (1, 0.8, 0.8, 0.25)
+        strip['color_blue'].rgba = (0, 0, 1, 0.25)
+        strip['rect_blue'].size = (abs(shift) + 2, strip_height)
+        strip['rect_blue'].pos = (self.pos[0] + shift * 2, self.pos[1] + strip_y)
 
         self.hard_glitch_timer = Clock.schedule_once(self._reset_glitch, 0.07)
 
     def _reset_glitch(self, dt=None):
-        self.chroma_red_color.rgba = (1, 0, 0, 0)
-        self.chroma_red_rect.pos = self.pos
-        self.chroma_blue_color.rgba = (0, 0, 1, 0)
-        self.chroma_blue_rect.pos = self.pos
-        self.strip_color.rgba = (1, 1, 1, 0)
-        self.strip_rect.pos = (0, 0)
+        for strip in self.glitch_strips:
+            strip['color_line'].rgba = (1, 1, 1, 0)
+            strip['color_red'].rgba = (1, 0, 0, 0)
+            strip['color_blue'].rgba = (0, 0, 1, 0)
         self.hard_glitch_timer = None
 
 
