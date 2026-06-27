@@ -828,8 +828,14 @@ class RedAffairApp(App):
                 self.music_sound.volume = self.music_volume
                 self.music_sound.loop = True
                 self.music_sound.play()
+                settings_screen = self.root_widget.sm.get_screen('settings')
+                if settings_screen:
+                    settings_screen._update_track_label()
             else:
                 log_crash(f"Failed to load music: {path}")
+                settings_screen = self.root_widget.sm.get_screen('settings')
+                if settings_screen:
+                    settings_screen.track_label.text = f"Error loading {path}"
         except Exception as e:
             log_crash(f"Music error: {traceback.format_exc()}")
 
