@@ -69,9 +69,9 @@ class CRTOverlay(Widget):
 
         self.scan_tex = Texture.create(size=(4, 4))
         scan_buf = bytes([
-            0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,
+            0, 0, 0, 32,  0, 0, 0, 32,  0, 0, 0, 32,  0, 0, 0, 32,
             0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,
-            0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,
+            0, 0, 0, 32,  0, 0, 0, 32,  0, 0, 0, 32,  0, 0, 0, 32,
             0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0
         ])
         self.scan_tex.blit_buffer(scan_buf, colorfmt='rgba', bufferfmt='ubyte')
@@ -557,6 +557,12 @@ class MenuScreen(Screen):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
+    def on_enter(self):
+        app = App.get_running_app()
+        if not app.music_started:
+            app.load_music()
+            app.music_started = True
+
     def start_game(self, instance):
         self.manager.current = 'game'
 
@@ -754,10 +760,10 @@ class RedAffairApp(App):
     music_index = 0
     music_volume = 0.4
     music_sound = None
+    music_started = False
 
     def build(self):
         self.root_widget = RootWidget()
-        self.load_music()
         return self.root_widget
 
     def load_music(self):
