@@ -76,11 +76,9 @@ class CRTOverlay(Widget):
         self.scan_tex.wrap = 'repeat'
 
         with self.canvas:
-            # Scanlines
             Color(1, 1, 1, 1)
             self.scan_rect = Rectangle(texture=self.scan_tex, size=self.size, pos=self.pos)
 
-            # Edge fringing – stored with Color instructions for chroma manipulation
             self.edge_left_color = Color(1, 0, 0, 0.03)
             self.edge_left = Rectangle(size=(3, self.height), pos=(0, 0))
             self.edge_right_color = Color(0, 0, 1, 0.03)
@@ -90,7 +88,6 @@ class CRTOverlay(Widget):
             self.edge_bottom_color = Color(0, 0, 1, 0.02)
             self.edge_bottom = Rectangle(size=(self.width, 2), pos=(0, 0))
 
-            # Glitch strips pool
             self.glitch_strips = []
             for _ in range(8):
                 color_red = Color(1, 0, 0, 0)
@@ -116,6 +113,7 @@ class CRTOverlay(Widget):
         self.hard_glitch_timer = None
         self.chroma_timer = None
         self.chroma_reset_timer = None
+        self.glitch_reschedule_timer = None
 
     def _update_rects(self, instance, value):
         self.scan_rect.size = instance.size
@@ -129,7 +127,7 @@ class CRTOverlay(Widget):
 
     def on_show(self):
         self.scroll_timer = Clock.schedule_interval(self._scroll_scanlines, 1/30.0)
-        self.glitch_timer = Clock.schedule_interval(self._random_glitch, 2.0)
+        self._schedule_glitch()
         self.chroma_timer = Clock.schedule_interval(self._trigger_chroma, 4.0)
 
     def on_hide(self):
@@ -137,6 +135,8 @@ class CRTOverlay(Widget):
             self.scroll_timer.cancel()
         if self.glitch_timer:
             self.glitch_timer.cancel()
+        if self.glitch_reschedule_timer:
+            self.glitch_reschedule_timer.cancel()
         if self.hard_glitch_timer:
             self.hard_glitch_timer.cancel()
         if self.chroma_timer:
@@ -156,11 +156,13 @@ class CRTOverlay(Widget):
             0, self.scan_offset + 1.0
         )
 
-    def _random_glitch(self, dt):
-        if py_random.random() < 0.2:
-            self._trigger_tear_glitch()
+    def _schedule_glitch(self):
+        delay = py_random.uniform(0.5, 5.0)
+        self.glitch_reschedule_timer = Clock.schedule_once(
+            lambda dt: self._trigger_tear_glitch(), delay
+        )
 
-    def _trigger_tear_glitch(self):
+    def _trigger_tear_glitch(self, *args):
         if self.hard_glitch_timer:
             self.hard_glitch_timer.cancel()
         strip = py_random.choice(self.glitch_strips)
@@ -181,6 +183,7 @@ class CRTOverlay(Widget):
         strip['rect_blue'].pos = (self.pos[0] + shift * 2, self.pos[1] + strip_y)
 
         self.hard_glitch_timer = Clock.schedule_once(self._reset_glitch, 0.07)
+        self._schedule_glitch()
 
     def _reset_glitch(self, dt=None):
         for strip in self.glitch_strips:
@@ -195,25 +198,23 @@ class CRTOverlay(Widget):
 
         shift = py_random.randint(15, 30) * (1 if py_random.random() < 0.5 else -1)
 
-        # Shift scanlines horizontally
-        self.scan_rect.pos = (self.pos[0] + shift, self.pos[1])
-
-        # Widen edge fringing and shift them opposite to simulate color offset
-        self.edge_left.size = (20, self.height)
+        self.edge_left.size = (30, self.height)
         self.edge_left.pos = (self.pos[0] - shift, self.pos[1])
-        self.edge_left_color.rgba = (1, 0, 0, 0.3)
+        self.edge_left_color.rgba = (1, 0, 0, 0.45)
 
-        self.edge_right.size = (20, self.height)
-        self.edge_right.pos = (self.pos[0] + self.width - 20 + shift, self.pos[1])
-        self.edge_right_color.rgba = (0, 0, 1, 0.3)
+        self.edge_right.size = (30, self.height)
+        self.edge_right.pos = (self.pos[0] + self.width - 30 + shift, self.pos[1])
+        self.edge_right_color.rgba = (0, 0, 1, 0.45)
 
-        self.edge_top.size = (self.width, 10)
-        self.edge_top.pos = (self.pos[0], self.pos[1] + self.height - 10)
-        self.edge_top_color.rgba = (1, 0, 0, 0.2)
+        self.edge_top.size = (self.width, 12)
+        self.edge_top.pos = (self.pos[0], self.pos[1] + self.height - 12)
+        self.edge_top_color.rgba = (1, 0, 0, 0.3)
 
-        self.edge_bottom.size = (self.width, 10)
+        self.edge_bottom.size = (self.width, 12)
         self.edge_bottom.pos = (self.pos[0], self.pos[1])
-        self.edge_bottom_color.rgba = (0, 0, 1, 0.2)
+        self.edge_bottom_color.rgba = (0, 0, 1, 0.3)
+
+        self.scan_rect.pos = (self.pos[0] + shift, self.pos[1])
 
         self.chroma_reset_timer = Clock.schedule_once(self._reset_chroma, 0.1)
 
