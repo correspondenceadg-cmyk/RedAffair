@@ -9,12 +9,12 @@ import random as py_random
 from io import StringIO
 
 from kivy.app import App
+from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
-from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
@@ -278,7 +278,7 @@ class SplashScreen(Screen):
         self.spinner_scatter.add_widget(self.spinner_image)
         self.layout.add_widget(self.spinner_scatter)
 
-        self.copyright_label = Label(text='RedMenace Games © 2026',
+        self.copyright_label = Label(text='SiliCast Games © 2026',
                                      font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                      font_size='11sp', color=(1, 0, 0, 1),
                                      size_hint=(None, None),
@@ -829,8 +829,13 @@ class RedAffairApp(App):
     music_started = False
 
     def build(self):
-        self.root_widget = RootWidget()
-        return self.root_widget
+        try:
+            self.root_widget = RootWidget()
+            return self.root_widget
+        except Exception:
+            err = traceback.format_exc()
+            log_crash(err)
+            return Label(text=f"STARTUP CRASH\n{err}", font_name=FONT_PATH, color=(1,0,0,1))
 
     def load_music(self):
         try:
