@@ -90,25 +90,33 @@ class CRTOverlay(Widget):
 
             self.glitch_strips = []
             for _ in range(8):
-                color_red = Color(1, 0, 0, 0)
-                rect_red = Rectangle(size=(1, 2), pos=(0, 0))
-                color_blue = Color(0, 0, 1, 0)
-                rect_blue = Rectangle(size=(1, 2), pos=(0, 0))
                 color_line = Color(1, 1, 1, 0)
                 rect_line = Rectangle(size=(self.width, 2), pos=(0, 0))
                 self.glitch_strips.append({
-                    'color_red': color_red,
-                    'rect_red': rect_red,
-                    'color_blue': color_blue,
-                    'rect_blue': rect_blue,
                     'color_line': color_line,
                     'rect_line': rect_line
+                })
+
+            self.chroma_tears = []
+            for _ in range(4):
+                color_white = Color(1, 1, 1, 0)
+                rect_white = Rectangle(size=(self.width, 40), pos=(0, 0))
+                color_red_tear = Color(1, 0, 0, 0)
+                rect_red_tear = Rectangle(size=(self.width, 40), pos=(0, 0))
+                color_blue_tear = Color(0, 0, 1, 0)
+                rect_blue_tear = Rectangle(size=(self.width, 40), pos=(0, 0))
+                self.chroma_tears.append({
+                    'color_white': color_white,
+                    'rect_white': rect_white,
+                    'color_red': color_red_tear,
+                    'rect_red': rect_red_tear,
+                    'color_blue': color_blue_tear,
+                    'rect_blue': rect_blue_tear,
                 })
 
         self.bind(size=self._update_rects, pos=self._update_rects)
 
         self.scan_offset = 0.0
-        self.glitch_timer = None
         self.scroll_timer = None
         self.hard_glitch_timer = None
         self.chroma_timer = None
@@ -128,13 +136,11 @@ class CRTOverlay(Widget):
     def on_show(self):
         self.scroll_timer = Clock.schedule_interval(self._scroll_scanlines, 1/30.0)
         self._schedule_glitch()
-        self.chroma_timer = Clock.schedule_interval(self._trigger_chroma, 4.0)
+        self.chroma_timer = Clock.schedule_interval(self._trigger_chroma, 3.0)
 
     def on_hide(self):
         if self.scroll_timer:
             self.scroll_timer.cancel()
-        if self.glitch_timer:
-            self.glitch_timer.cancel()
         if self.glitch_reschedule_timer:
             self.glitch_reschedule_timer.cancel()
         if self.hard_glitch_timer:
@@ -174,69 +180,45 @@ class CRTOverlay(Widget):
         strip['rect_line'].size = (self.width, strip_height)
         strip['rect_line'].pos = (self.pos[0] + shift, self.pos[1] + strip_y)
 
-        strip['color_red'].rgba = (1, 0, 0, 0.25)
-        strip['rect_red'].size = (abs(shift) + 2, strip_height)
-        strip['rect_red'].pos = (self.pos[0] - shift, self.pos[1] + strip_y)
-
-        strip['color_blue'].rgba = (0, 0, 1, 0.25)
-        strip['rect_blue'].size = (abs(shift) + 2, strip_height)
-        strip['rect_blue'].pos = (self.pos[0] + shift * 2, self.pos[1] + strip_y)
-
         self.hard_glitch_timer = Clock.schedule_once(self._reset_glitch, 0.07)
         self._schedule_glitch()
 
     def _reset_glitch(self, dt=None):
         for strip in self.glitch_strips:
             strip['color_line'].rgba = (1, 1, 1, 0)
-            strip['color_red'].rgba = (1, 0, 0, 0)
-            strip['color_blue'].rgba = (0, 0, 1, 0)
         self.hard_glitch_timer = None
 
     def _trigger_chroma(self, dt):
         if self.chroma_reset_timer:
             self.chroma_reset_timer.cancel()
 
-        shift = py_random.randint(15, 30) * (1 if py_random.random() < 0.5 else -1)
+        tear = py_random.choice(self.chroma_tears)
+        height = py_random.randint(30, 70)
+        y = py_random.randint(0, max(1, int(self.height) - height))
+        shift = py_random.randint(20, 45) * (1 if py_random.random() < 0.5 else -1)
 
-        self.edge_left.size = (30, self.height)
-        self.edge_left.pos = (self.pos[0] - shift, self.pos[1])
-        self.edge_left_color.rgba = (1, 0, 0, 0.45)
+        tear['color_white'].rgba = (1, 1, 1, 0.25)
+        tear['rect_white'].size = (self.width, height)
+        tear['rect_white'].pos = (self.pos[0] + shift, self.pos[1] + y)
 
-        self.edge_right.size = (30, self.height)
-        self.edge_right.pos = (self.pos[0] + self.width - 30 + shift, self.pos[1])
-        self.edge_right_color.rgba = (0, 0, 1, 0.45)
+        tear['color_red'].rgba = (1, 0, 0, 0.25)
+        tear['rect_red'].size = (self.width, height)
+        tear['rect_red'].pos = (self.pos[0] + shift - 6, self.pos[1] + y)
 
-        self.edge_top.size = (self.width, 12)
-        self.edge_top.pos = (self.pos[0], self.pos[1] + self.height - 12)
-        self.edge_top_color.rgba = (1, 0, 0, 0.3)
+        tear['color_blue'].rgba = (0, 0, 1, 0.25)
+        tear['rect_blue'].size = (self.width, height)
+        tear['rect_blue'].pos = (self.pos[0] + shift + 6, self.pos[1] + y)
 
-        self.edge_bottom.size = (self.width, 12)
-        self.edge_bottom.pos = (self.pos[0], self.pos[1])
-        self.edge_bottom_color.rgba = (0, 0, 1, 0.3)
-
-        self.scan_rect.pos = (self.pos[0] + shift, self.pos[1])
+        self.scan_rect.pos = (self.pos[0] + shift // 3, self.pos[1])
 
         self.chroma_reset_timer = Clock.schedule_once(self._reset_chroma, 0.1)
 
     def _reset_chroma(self, dt=None):
         self.scan_rect.pos = self.pos
-
-        self.edge_left.size = (3, self.height)
-        self.edge_left.pos = (0, 0)
-        self.edge_left_color.rgba = (1, 0, 0, 0.03)
-
-        self.edge_right.size = (3, self.height)
-        self.edge_right.pos = (self.width - 3, 0)
-        self.edge_right_color.rgba = (0, 0, 1, 0.03)
-
-        self.edge_top.size = (self.width, 2)
-        self.edge_top.pos = (0, self.height - 2)
-        self.edge_top_color.rgba = (1, 0, 0, 0.02)
-
-        self.edge_bottom.size = (self.width, 2)
-        self.edge_bottom.pos = (0, 0)
-        self.edge_bottom_color.rgba = (0, 0, 1, 0.02)
-
+        for tear in self.chroma_tears:
+            tear['color_white'].rgba = (1, 1, 1, 0)
+            tear['color_red'].rgba = (1, 0, 0, 0)
+            tear['color_blue'].rgba = (0, 0, 1, 0)
         self.chroma_reset_timer = None
 
 
