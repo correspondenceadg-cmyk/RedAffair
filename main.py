@@ -578,7 +578,7 @@ class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.scroll = ScrollView(size_hint=(1, 1), do_scroll_x=False)
-        self.layout = BoxLayout(orientation='vertical', padding=20, spacing=12, size_hint_y=None)
+        self.layout = BoxLayout(orientation='vertical', padding=30, spacing=24, size_hint_y=None)
         self.layout.bind(minimum_height=self.layout.setter('height'))
 
         with self.canvas.before:
@@ -589,10 +589,10 @@ class SettingsScreen(Screen):
         header = Label(
             text='SETTINGS',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='28sp',
+            font_size='30sp',
             color=(1, 0, 0, 1),
             size_hint=(1, None),
-            height=60
+            height=70
         )
         self.layout.add_widget(header)
 
@@ -604,7 +604,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=80
+            height=90
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
         self.layout.add_widget(self.theme_toggle)
@@ -617,7 +617,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=80
+            height=90
         )
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         self.layout.add_widget(self.dynamic_lighting_toggle)
@@ -670,7 +670,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=80
+            height=90
         )
         self.next_track_btn.bind(on_press=self.next_track)
         self.layout.add_widget(self.next_track_btn)
@@ -682,7 +682,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=80
+            height=90
         )
         back_btn.bind(on_press=self.go_back)
         self.layout.add_widget(back_btn)
@@ -827,7 +827,7 @@ class RedAffairApp(App):
             if self.music_sound:
                 self.music_sound.volume = self.music_volume
                 self.music_sound.loop = True
-                self.music_sound.play()
+                Clock.schedule_once(lambda dt: self._start_playback(), 0.2)
                 settings_screen = self.root_widget.sm.get_screen('settings')
                 if settings_screen:
                     settings_screen._update_track_label()
@@ -838,6 +838,10 @@ class RedAffairApp(App):
                     settings_screen.track_label.text = f"Error loading {path}"
         except Exception as e:
             log_crash(f"Music error: {traceback.format_exc()}")
+
+    def _start_playback(self):
+        if self.music_sound:
+            self.music_sound.play()
 
     def set_music_volume(self, volume):
         self.music_volume = volume
