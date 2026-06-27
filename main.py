@@ -278,7 +278,7 @@ class SplashScreen(Screen):
         self.spinner_scatter.add_widget(self.spinner_image)
         self.layout.add_widget(self.spinner_scatter)
 
-        self.copyright_label = Label(text='SiliCast Games © 2026',
+        self.copyright_label = Label(text='RedMenace Games © 2026',
                                      font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
                                      font_size='11sp', color=(1, 0, 0, 1),
                                      size_hint=(None, None),
