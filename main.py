@@ -1,4 +1,4 @@
-LOG_FILE = '/storage/emulated/0/Download/redaffair_crash.log'import sys
+import sys
 import threading
 import queue
 import re
@@ -571,7 +571,7 @@ class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.scroll = ScrollView(size_hint=(1, 1), do_scroll_x=False)
-        self.layout = BoxLayout(orientation='vertical', padding=20, spacing=12, size_hint_y=None)
+        self.layout = BoxLayout(orientation='vertical', padding=20, spacing=8, size_hint_y=None)
         self.layout.bind(minimum_height=self.layout.setter('height'))
 
         with self.canvas.before:
@@ -582,10 +582,10 @@ class SettingsScreen(Screen):
         header = Label(
             text='SETTINGS',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='30sp',
+            font_size='28sp',
             color=(1, 0, 0, 1),
             size_hint=(1, None),
-            height=70
+            height=60
         )
         self.layout.add_widget(header)
 
@@ -593,11 +593,11 @@ class SettingsScreen(Screen):
             text='Dark Mode (Red on Black)',
             state='down',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='20sp',
+            font_size='18sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=70
+            height=50
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
         self.layout.add_widget(self.theme_toggle)
@@ -606,11 +606,11 @@ class SettingsScreen(Screen):
             text='Dynamic Lighting: ON',
             state='down',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='20sp',
+            font_size='18sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=70
+            height=50
         )
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         self.layout.add_widget(self.dynamic_lighting_toggle)
@@ -665,7 +665,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=70,
+            height=50,
             disabled=True
         )
         self.layout.add_widget(self.next_track_btn)
@@ -673,11 +673,11 @@ class SettingsScreen(Screen):
         back_btn = Button(
             text='Back',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='22sp',
+            font_size='20sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=70
+            height=60
         )
         back_btn.bind(on_press=self.go_back)
         self.layout.add_widget(back_btn)
