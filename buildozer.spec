@@ -8,7 +8,7 @@ version = 0.1
 requirements = python3,kivy
 orientation = all
 
-#icon.filename=%(source.dir)s/icon.png
+icon.filename=%(source.dir)s/icon.png
 
 osx.python_version = 3
 osx.kivy_version = 2.3.0
