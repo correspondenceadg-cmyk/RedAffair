@@ -28,7 +28,7 @@ from kivy.graphics import Color, Rectangle
 from kivy.graphics.texture import Texture
 from kivy.animation import Animation
 
-LOG_FILE = '/storage/emulated/0/Download/redaffair_crash.log'
+LOG_FILE = '/sdcard/redaffair_crash.log'
 
 def log_crash(exc_text):
     try:
@@ -640,9 +640,7 @@ class SettingsScreen(Screen):
             size_hint=(1, None), height=40,
             value_track_color=(1, 0, 0, 1),
             value_track_width=6,
-            thumb_color=(1, 0, 0, 1),
             background_width=3,
-            background_color=(0.3, 0, 0, 1),
             disabled=True
         )
         self.layout.add_widget(self.volume_slider)
