@@ -67,9 +67,9 @@ class CRTOverlay(Widget):
 
         self.scan_tex = Texture.create(size=(4, 4))
         scan_buf = bytes([
-            0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,
+            0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,
             0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,
-            0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,  0, 0, 0, 25,
+            0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,  0, 0, 0, 33,
             0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0
         ])
         self.scan_tex.blit_buffer(scan_buf, colorfmt='rgba', bufferfmt='ubyte')
