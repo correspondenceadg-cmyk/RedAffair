@@ -27,7 +27,6 @@ from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from kivy.graphics.texture import Texture
 from kivy.animation import Animation
-# from kivy.core.audio import SoundLoader
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
 
@@ -773,52 +772,9 @@ class RedAffairApp(App):
     current_theme = DARK_THEME
     crt_enabled = True
 
-    # Music system (commented out)
-    # music_tracks = [
-    #     'audio/track1.wav',
-    #     'audio/track2.ogg',
-    #     'audio/track3.ogg',
-    #     'audio/track4.ogg'
-    # ]
-    # music_info = {
-    #     'audio/track1.wav': ('Blue Eyes', 'Dotdropper'),
-    #     'audio/track2.ogg': ('Track 2', 'Unknown'),
-    #     'audio/track3.ogg': ('Track 3', 'Unknown'),
-    #     'audio/track4.ogg': ('Track 4', 'Unknown'),
-    # }
-    # music_index = 0
-    # music_volume = 0.4
-    # music_sound = None
-    # music_started = False
-
     def build(self):
         self.root_widget = RootWidget()
         return self.root_widget
-
-    # def load_music(self):
-    #     try:
-    #         path = self.music_tracks[self.music_index]
-    #         self.music_sound = SoundLoader.load(path)
-    #         if self.music_sound:
-    #             self.music_sound.volume = self.music_volume
-    #             self.music_sound.loop = True
-    #             self.music_sound.play()
-    #         else:
-    #             log_crash(f"Failed to load music: {path}")
-    #     except Exception as e:
-    #         log_crash(f"Music error: {traceback.format_exc()}")
-
-    # def set_music_volume(self, volume):
-    #     self.music_volume = volume
-    #     if self.music_sound:
-    #         self.music_sound.volume = volume
-
-    # def next_track(self):
-    #     self.music_index = (self.music_index + 1) % len(self.music_tracks)
-    #     if self.music_sound:
-    #         self.music_sound.stop()
-    #         self.music_sound.unload()
-    #     self.load_music()
 
     def enable_crt(self):
         if not self.crt_enabled:
