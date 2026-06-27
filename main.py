@@ -18,7 +18,6 @@ from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.slider import Slider
 from kivy.uix.image import Image
 from kivy.uix.scatter import Scatter
 from kivy.uix.widget import Widget
@@ -27,7 +26,6 @@ from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from kivy.graphics.texture import Texture
 from kivy.animation import Animation
-from kivy.core.audio import SoundLoader
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
 
@@ -557,12 +555,6 @@ class MenuScreen(Screen):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
-    def on_enter(self):
-        app = App.get_running_app()
-        if not app.music_started:
-            app.load_music()
-            app.music_started = True
-
     def start_game(self, instance):
         self.manager.current = 'game'
 
@@ -578,8 +570,8 @@ class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.scroll = ScrollView(size_hint=(1, 1), do_scroll_x=False)
-        self.layout = BoxLayout(orientation='vertical', padding=20, spacing=8, size_hint_y=None)
-        self.layout.bind(minimum_height=self.layout.setter('height'))
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=8, size_hint_y=None)
+        layout.bind(minimum_height=layout.setter('height'))
 
         with self.canvas.before:
             Color(0, 0, 0, 1)
@@ -594,7 +586,7 @@ class SettingsScreen(Screen):
             size_hint=(1, None),
             height=60
         )
-        self.layout.add_widget(header)
+        layout.add_widget(header)
 
         self.theme_toggle = ToggleButton(
             text='Dark Mode (Red on Black)',
@@ -607,7 +599,7 @@ class SettingsScreen(Screen):
             height=50
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
-        self.layout.add_widget(self.theme_toggle)
+        layout.add_widget(self.theme_toggle)
 
         self.dynamic_lighting_toggle = ToggleButton(
             text='Dynamic Lighting: ON',
@@ -620,62 +612,7 @@ class SettingsScreen(Screen):
             height=50
         )
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
-        self.layout.add_widget(self.dynamic_lighting_toggle)
-
-        self.track_label = Label(
-            text='Now Playing: None',
-            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='16sp',
-            color=(1, 0, 0, 1),
-            size_hint=(1, None),
-            height=30
-        )
-        self.layout.add_widget(self.track_label)
-
-        vol_label = Label(
-            text='Music Volume',
-            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='16sp',
-            color=(1, 0, 0, 1),
-            size_hint=(1, None),
-            height=25
-        )
-        self.layout.add_widget(vol_label)
-
-        self.volume_slider = Slider(
-            min=0, max=1, value=0.4,
-            size_hint=(1, None), height=30,
-            value_track_color=(1, 0, 0, 1),
-            value_track_width=4,
-            thumb_color=(1, 0, 0, 1),
-            background_width=2,
-            background_color=(0.3, 0, 0, 1)
-        )
-        self.volume_slider.bind(value=self.on_volume_change)
-        self.layout.add_widget(self.volume_slider)
-
-        self.vol_bar_label = Label(
-            text='[          ]',
-            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='16sp',
-            color=(1, 0, 0, 1),
-            size_hint=(1, None),
-            height=30,
-            halign='center'
-        )
-        self.layout.add_widget(self.vol_bar_label)
-
-        self.next_track_btn = Button(
-            text='Next Track',
-            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='16sp',
-            background_color=(0.2, 0, 0, 1),
-            color=(1, 1, 1, 1),
-            size_hint=(1, None),
-            height=50
-        )
-        self.next_track_btn.bind(on_press=self.next_track)
-        self.layout.add_widget(self.next_track_btn)
+        layout.add_widget(self.dynamic_lighting_toggle)
 
         back_btn = Button(
             text='Back',
@@ -687,36 +624,14 @@ class SettingsScreen(Screen):
             height=60
         )
         back_btn.bind(on_press=self.go_back)
-        self.layout.add_widget(back_btn)
+        layout.add_widget(back_btn)
 
-        self.scroll.add_widget(self.layout)
+        self.scroll.add_widget(layout)
         self.add_widget(self.scroll)
 
     def _update_bg(self, instance, value):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
-
-    def on_enter(self):
-        app = App.get_running_app()
-        self.volume_slider.value = app.music_volume
-        self._update_track_label()
-        self._update_vol_bar()
-
-    def _update_track_label(self):
-        app = App.get_running_app()
-        if app.music_sound:
-            track_path = app.music_tracks[app.music_index]
-            info = app.music_info.get(track_path, ('Unknown', 'Unknown'))
-            self.track_label.text = f'Now Playing: {info[0]} - {info[1]}'
-        else:
-            self.track_label.text = 'Now Playing: None'
-
-    def _update_vol_bar(self, *args):
-        val = self.volume_slider.value
-        filled = int(val * 10)
-        empty = 10 - filled
-        bar = '[' + '=' * filled + ' ' * empty + ']'
-        self.vol_bar_label.text = bar
 
     def toggle_theme(self, instance):
         app = App.get_running_app()
@@ -737,17 +652,6 @@ class SettingsScreen(Screen):
         else:
             instance.text = 'Dynamic Lighting: OFF'
             app.disable_crt()
-
-    def on_volume_change(self, instance, value):
-        app = App.get_running_app()
-        app.set_music_volume(value)
-        self._update_vol_bar()
-
-    def next_track(self, instance):
-        app = App.get_running_app()
-        app.next_track()
-        self._update_track_label()
-        self._update_vol_bar()
 
     def go_back(self, instance):
         self.manager.current = 'menu'
@@ -811,52 +715,10 @@ class RootWidget(FloatLayout):
 class RedAffairApp(App):
     current_theme = DARK_THEME
     crt_enabled = True
-    music_tracks = [
-        'audio/track1.wav',
-        'audio/track2.ogg',
-        'audio/track3.ogg',
-        'audio/track4.ogg'
-    ]
-    music_info = {
-        'audio/track1.wav': ('Blue Eyes', 'Dotdropper'),
-        'audio/track2.ogg': ('Track 2', 'Unknown'),
-        'audio/track3.ogg': ('Track 3', 'Unknown'),
-        'audio/track4.ogg': ('Track 4', 'Unknown'),
-    }
-    music_index = 0
-    music_volume = 0.4
-    music_sound = None
-    music_started = False
 
     def build(self):
         self.root_widget = RootWidget()
         return self.root_widget
-
-    def load_music(self):
-        try:
-            path = self.music_tracks[self.music_index]
-            self.music_sound = SoundLoader.load(path)
-            if self.music_sound:
-                self.music_sound.volume = self.music_volume
-                self.music_sound.loop = True
-                self.music_sound.play()
-                log_crash(f"Music loaded: {path}")
-            else:
-                log_crash(f"Failed to load music: {path}")
-        except Exception as e:
-            log_crash(f"Music error: {traceback.format_exc()}")
-
-    def set_music_volume(self, volume):
-        self.music_volume = volume
-        if self.music_sound:
-            self.music_sound.volume = volume
-
-    def next_track(self):
-        self.music_index = (self.music_index + 1) % len(self.music_tracks)
-        if self.music_sound:
-            self.music_sound.stop()
-            self.music_sound.unload()
-        self.load_music()
 
     def enable_crt(self):
         if not self.crt_enabled:
