@@ -27,7 +27,7 @@ from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle
 from kivy.graphics.texture import Texture
 from kivy.animation import Animation
-from kivy.core.audio import SoundLoader
+# from kivy.core.audio import SoundLoader
 
 LOG_FILE = '/sdcard/redaffair_crash.log'
 
@@ -557,13 +557,6 @@ class MenuScreen(Screen):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
-    def on_enter(self):
-        app = App.get_running_app()
-        # Music start temporarily disabled for testing
-        # if not app.music_started:
-        #     app.load_music()
-        #     app.music_started = True
-
     def start_game(self, instance):
         self.manager.current = 'game'
 
@@ -624,7 +617,7 @@ class SettingsScreen(Screen):
         self.layout.add_widget(self.dynamic_lighting_toggle)
 
         self.track_label = Label(
-            text='Now Playing: None',
+            text='Music Unavailable',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
             font_size='18sp',
             color=(1, 0, 0, 1),
@@ -650,9 +643,9 @@ class SettingsScreen(Screen):
             value_track_width=6,
             thumb_color=(1, 0, 0, 1),
             background_width=3,
-            background_color=(0.3, 0, 0, 1)
+            background_color=(0.3, 0, 0, 1),
+            disabled=True
         )
-        self.volume_slider.bind(value=self.on_volume_change)
         self.layout.add_widget(self.volume_slider)
 
         self.vol_bar_label = Label(
@@ -673,9 +666,9 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=70
+            height=70,
+            disabled=True
         )
-        self.next_track_btn.bind(on_press=self.next_track)
         self.layout.add_widget(self.next_track_btn)
 
         back_btn = Button(
@@ -697,28 +690,6 @@ class SettingsScreen(Screen):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
-    def on_enter(self):
-        app = App.get_running_app()
-        self.volume_slider.value = app.music_volume
-        self._update_track_label()
-        self._update_vol_bar()
-
-    def _update_track_label(self):
-        app = App.get_running_app()
-        if app.music_sound:
-            track_path = app.music_tracks[app.music_index]
-            info = app.music_info.get(track_path, ('Unknown', 'Unknown'))
-            self.track_label.text = f'Now Playing: {info[0]} - {info[1]}'
-        else:
-            self.track_label.text = 'Now Playing: None'
-
-    def _update_vol_bar(self, *args):
-        val = self.volume_slider.value
-        filled = int(val * 10)
-        empty = 10 - filled
-        bar = '[' + '=' * filled + ' ' * empty + ']'
-        self.vol_bar_label.text = bar
-
     def toggle_theme(self, instance):
         app = App.get_running_app()
         if instance.state == 'down':
@@ -738,17 +709,6 @@ class SettingsScreen(Screen):
         else:
             instance.text = 'Dynamic Lighting: OFF'
             app.disable_crt()
-
-    def on_volume_change(self, instance, value):
-        app = App.get_running_app()
-        app.set_music_volume(value)
-        self._update_vol_bar()
-
-    def next_track(self, instance):
-        app = App.get_running_app()
-        app.next_track()
-        self._update_track_label()
-        self._update_vol_bar()
 
     def go_back(self, instance):
         self.manager.current = 'menu'
@@ -812,56 +772,53 @@ class RootWidget(FloatLayout):
 class RedAffairApp(App):
     current_theme = DARK_THEME
     crt_enabled = True
-    music_tracks = [
-        'audio/track1.wav',
-        'audio/track2.ogg',
-        'audio/track3.ogg',
-        'audio/track4.ogg'
-    ]
-    music_info = {
-        'audio/track1.wav': ('Blue Eyes', 'Dotdropper'),
-        'audio/track2.ogg': ('Track 2', 'Unknown'),
-        'audio/track3.ogg': ('Track 3', 'Unknown'),
-        'audio/track4.ogg': ('Track 4', 'Unknown'),
-    }
-    music_index = 0
-    music_volume = 0.4
-    music_sound = None
-    music_started = False
+
+    # Music system (commented out)
+    # music_tracks = [
+    #     'audio/track1.wav',
+    #     'audio/track2.ogg',
+    #     'audio/track3.ogg',
+    #     'audio/track4.ogg'
+    # ]
+    # music_info = {
+    #     'audio/track1.wav': ('Blue Eyes', 'Dotdropper'),
+    #     'audio/track2.ogg': ('Track 2', 'Unknown'),
+    #     'audio/track3.ogg': ('Track 3', 'Unknown'),
+    #     'audio/track4.ogg': ('Track 4', 'Unknown'),
+    # }
+    # music_index = 0
+    # music_volume = 0.4
+    # music_sound = None
+    # music_started = False
 
     def build(self):
-        try:
-            self.root_widget = RootWidget()
-            return self.root_widget
-        except Exception:
-            err = traceback.format_exc()
-            log_crash(err)
-            return Label(text=f"STARTUP CRASH\n{err}", font_name=FONT_PATH, color=(1,0,0,1))
+        self.root_widget = RootWidget()
+        return self.root_widget
 
-    def load_music(self):
-        try:
-            path = self.music_tracks[self.music_index]
-            self.music_sound = SoundLoader.load(path)
-            if self.music_sound:
-                self.music_sound.volume = self.music_volume
-                self.music_sound.loop = True
-                self.music_sound.play()
-            else:
-                log_crash(f"Failed to load music: {path}")
-        except Exception as e:
-            log_crash(f"Music error: {traceback.format_exc()}")
+    # def load_music(self):
+    #     try:
+    #         path = self.music_tracks[self.music_index]
+    #         self.music_sound = SoundLoader.load(path)
+    #         if self.music_sound:
+    #             self.music_sound.volume = self.music_volume
+    #             self.music_sound.loop = True
+    #             self.music_sound.play()
+    #         else:
+    #             log_crash(f"Failed to load music: {path}")
+    #     except Exception as e:
+    #         log_crash(f"Music error: {traceback.format_exc()}")
 
-    def set_music_volume(self, volume):
-        self.music_volume = volume
-        if self.music_sound:
-            self.music_sound.volume = volume
+    # def set_music_volume(self, volume):
+    #     self.music_volume = volume
+    #     if self.music_sound:
+    #         self.music_sound.volume = volume
 
-    def next_track(self):
-        self.music_index = (self.music_index + 1) % len(self.music_tracks)
-        if self.music_sound:
-            self.music_sound.stop()
-            self.music_sound.unload()
-        self.load_music()
+    # def next_track(self):
+    #     self.music_index = (self.music_index + 1) % len(self.music_tracks)
+    #     if self.music_sound:
+    #         self.music_sound.stop()
+    #         self.music_sound.unload()
+    #     self.load_music()
 
     def enable_crt(self):
         if not self.crt_enabled:
