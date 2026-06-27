@@ -9,12 +9,12 @@ import random as py_random
 from io import StringIO
 
 from kivy.app import App
-from kivy.uix.label import Label
 from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.textinput import TextInput
+from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
@@ -559,9 +559,10 @@ class MenuScreen(Screen):
 
     def on_enter(self):
         app = App.get_running_app()
-        if not app.music_started:
-            app.load_music()
-            app.music_started = True
+        # Music start temporarily disabled for testing
+        # if not app.music_started:
+        #     app.load_music()
+        #     app.music_started = True
 
     def start_game(self, instance):
         self.manager.current = 'game'
