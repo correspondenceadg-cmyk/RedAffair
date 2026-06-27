@@ -1,4 +1,4 @@
-import sys
+LOG_FILE = '/storage/emulated/0/Download/redaffair_crash.log'import sys
 import threading
 import queue
 import re
@@ -28,7 +28,7 @@ from kivy.graphics import Color, Rectangle
 from kivy.graphics.texture import Texture
 from kivy.animation import Animation
 
-LOG_FILE = '/sdcard/redaffair_crash.log'
+LOG_FILE = '/storage/emulated/0/Download/redaffair_crash.log'
 
 def log_crash(exc_text):
     try:
