@@ -1,5 +1,5 @@
 [app]
-title = The Red Affair
+title = Red Affair
 package.name = redaffair
 package.domain = org.example
 source.dir = .
