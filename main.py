@@ -642,7 +642,8 @@ class SettingsScreen(Screen):
             value_track_color=(1, 0, 0, 1),
             value_track_width=6,
             background_width=3,
-            thumb_image='assets/slider.png'
+            cursor_image='assets/slider.png',
+            cursor_size=(0, 0)
         )
         self.volume_slider.bind(value=self.on_volume_change)
         self.layout.add_widget(self.volume_slider)
