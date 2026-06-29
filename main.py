@@ -557,12 +557,6 @@ class MenuScreen(Screen):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
-    def on_enter(self):
-        app = App.get_running_app()
-        if not app.music_started:
-            app.load_music()
-            app.music_started = True
-
     def start_game(self, instance):
         self.manager.current = 'game'
 
@@ -578,7 +572,7 @@ class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.scroll = ScrollView(size_hint=(1, 1), do_scroll_x=False)
-        self.layout = BoxLayout(orientation='vertical', padding=30, spacing=24, size_hint_y=None)
+        self.layout = BoxLayout(orientation='vertical', padding=40, spacing=32, size_hint_y=None)
         self.layout.bind(minimum_height=self.layout.setter('height'))
 
         with self.canvas.before:
@@ -592,7 +586,7 @@ class SettingsScreen(Screen):
             font_size='30sp',
             color=(1, 0, 0, 1),
             size_hint=(1, None),
-            height=70
+            height=80
         )
         self.layout.add_widget(header)
 
@@ -604,7 +598,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=90
+            height=100
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
         self.layout.add_widget(self.theme_toggle)
@@ -617,7 +611,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=90
+            height=100
         )
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         self.layout.add_widget(self.dynamic_lighting_toggle)
@@ -628,7 +622,7 @@ class SettingsScreen(Screen):
             font_size='18sp',
             color=(1, 0, 0, 1),
             size_hint=(1, None),
-            height=40
+            height=50
         )
         self.layout.add_widget(self.track_label)
 
@@ -638,16 +632,17 @@ class SettingsScreen(Screen):
             font_size='18sp',
             color=(1, 0, 0, 1),
             size_hint=(1, None),
-            height=35
+            height=40
         )
         self.layout.add_widget(vol_label)
 
         self.volume_slider = Slider(
             min=0, max=1, value=0.4,
-            size_hint=(1, None), height=40,
+            size_hint=(1, None), height=50,
             value_track_color=(1, 0, 0, 1),
             value_track_width=6,
-            background_width=3
+            background_width=3,
+            thumb_image='assets/thumb.png'
         )
         self.volume_slider.bind(value=self.on_volume_change)
         self.layout.add_widget(self.volume_slider)
@@ -670,7 +665,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=90
+            height=100
         )
         self.next_track_btn.bind(on_press=self.next_track)
         self.layout.add_widget(self.next_track_btn)
@@ -682,7 +677,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=90
+            height=100
         )
         back_btn.bind(on_press=self.go_back)
         self.layout.add_widget(back_btn)
@@ -807,9 +802,9 @@ class RootWidget(FloatLayout):
 class RedAffairApp(App):
     current_theme = DARK_THEME
     crt_enabled = True
-    music_tracks = ['audio/track1.wav']
+    music_tracks = ['audio/track1.ogg']
     music_info = {
-        'audio/track1.wav': ('Blue Eyes', 'Dotdropper'),
+        'audio/track1.ogg': ('Blue Eyes', 'Dotdropper'),
     }
     music_index = 0
     music_volume = 0.4
@@ -818,16 +813,24 @@ class RedAffairApp(App):
 
     def build(self):
         self.root_widget = RootWidget()
+        Clock.schedule_once(lambda dt: self.start_music(), 1)
         return self.root_widget
+
+    def start_music(self):
+        if not self.music_started:
+            self.load_music()
+            self.music_started = True
 
     def load_music(self):
         try:
             path = self.music_tracks[self.music_index]
+            log_crash(f"Loading music: {path}")
             self.music_sound = SoundLoader.load(path)
             if self.music_sound:
                 self.music_sound.volume = self.music_volume
                 self.music_sound.loop = True
-                Clock.schedule_once(lambda dt: self._start_playback(), 0.2)
+                self.music_sound.play()
+                log_crash("Music started playing")
                 settings_screen = self.root_widget.sm.get_screen('settings')
                 if settings_screen:
                     settings_screen._update_track_label()
@@ -838,10 +841,6 @@ class RedAffairApp(App):
                     settings_screen.track_label.text = f"Error loading {path}"
         except Exception as e:
             log_crash(f"Music error: {traceback.format_exc()}")
-
-    def _start_playback(self):
-        if self.music_sound:
-            self.music_sound.play()
 
     def set_music_volume(self, volume):
         self.music_volume = volume
