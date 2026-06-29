@@ -572,7 +572,7 @@ class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.scroll = ScrollView(size_hint=(1, 1), do_scroll_x=False)
-        self.layout = BoxLayout(orientation='vertical', padding=40, spacing=32, size_hint_y=None)
+        self.layout = BoxLayout(orientation='vertical', padding=50, spacing=40, size_hint_y=None)
         self.layout.bind(minimum_height=self.layout.setter('height'))
 
         with self.canvas.before:
@@ -598,7 +598,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=100
+            height=120
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
         self.layout.add_widget(self.theme_toggle)
@@ -611,7 +611,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=100
+            height=120
         )
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         self.layout.add_widget(self.dynamic_lighting_toggle)
@@ -637,8 +637,8 @@ class SettingsScreen(Screen):
         self.layout.add_widget(vol_label)
 
         self.volume_slider = Slider(
-            min=0, max=1, value=0.4,
-            size_hint=(1, None), height=50,
+            min=0, max=1, value=0.3,
+            size_hint=(1, None), height=80,
             value_track_color=(1, 0, 0, 1),
             value_track_width=6,
             background_width=3,
@@ -666,7 +666,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=100
+            height=120
         )
         self.next_track_btn.bind(on_press=self.next_track)
         self.layout.add_widget(self.next_track_btn)
@@ -678,7 +678,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=100
+            height=120
         )
         back_btn.bind(on_press=self.go_back)
         self.layout.add_widget(back_btn)
@@ -803,12 +803,20 @@ class RootWidget(FloatLayout):
 class RedAffairApp(App):
     current_theme = DARK_THEME
     crt_enabled = True
-    music_tracks = ['audio/track1.ogg']
+    music_tracks = [
+        'audio/track1.ogg',
+        'audio/track2.ogg',
+        'audio/track3.ogg',
+        'audio/track4.ogg'
+    ]
     music_info = {
         'audio/track1.ogg': ('Blue Eyes', 'Dotdropper'),
+        'audio/track2.ogg': ('Track 2', 'Composer 2'),
+        'audio/track3.ogg': ('Track 3', 'Composer 3'),
+        'audio/track4.ogg': ('Track 4', 'Composer 4'),
     }
     music_index = 0
-    music_volume = 0.4
+    music_volume = 0.3
     music_sound = None
     music_started = False
 
