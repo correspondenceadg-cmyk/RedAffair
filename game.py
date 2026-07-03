@@ -1,5 +1,7 @@
 import random, sys, os, textwrap
 
+sfx_queue = None
+
 def play_game():
     RED = '\033[31m'
     BLACK_BG = '\033[40m'
@@ -346,6 +348,7 @@ def play_game():
         player["regular_hit_chance"] = min(player["regular_hit_chance"] + reg_increase, 0.95)
         player["special_hit_chance"] = min(player["special_hit_chance"] + spec_increase, 0.95)
         print(f"{RED}🎉 LEVEL UP! Level {player['level']}. HP: {player['hp']}/{player['max_hp']}{RESET}")
+        if sfx_queue: sfx_queue.put('lvlup')
 
     def trust_change(sus, amount):
         trust[sus] = max(0, min(3, trust[sus] + amount))
@@ -454,6 +457,7 @@ def play_game():
             loc["items"].remove(item)
             inventory.append(item)
             print(f"Pocketed: {item}. Maybe you can find some use for it, or just a keep it as a souvenir of this...establishment.")
+            if sfx_queue: sfx_queue.put('take')
         else:
             print("It's not here. Maybe it was never here. Maybe nothing is.")
 
@@ -643,6 +647,7 @@ def play_game():
         handcuffs -= 1
         s["detained"] = True
         print(f"Click-click-click-click. {get_first_name(s['name'])} now sports a used set of state-issued jewelry. {handcuffs} remaining.")
+        if sfx_queue: sfx_queue.put('cuffs')
 
     def fight(sus):
         if not sus:
@@ -669,6 +674,7 @@ def play_game():
             return
         curse = random.choice(s["curses"]) if s["curses"] else ""
         print(f"\n{RED}⚔ The air is electric. You and {get_first_name(s['name'])} circle the area like binary stars on a collision course. There may yet be another murder. At least it'll be easy to solve.{RESET}")
+        if sfx_queue: sfx_queue.put('fight')
         while player["hp"] > 0 and s["hp"] > 0:
             print(f"\nYour HP: {player['hp']}/{player['max_hp']} | {get_first_name(s['name'])} HP: {s['hp']}")
             print("1. Calculated strike  2. Desperate swing  3. Tactical retreat")
@@ -680,6 +686,7 @@ def play_game():
                 dmg = int(round(player["base_damage"]))
                 s["hp"] -= dmg
                 print(f"Clean hit. {dmg} damage. Good work.")
+                if sfx_queue: sfx_queue.put('hit')
             elif act == "2":
                 roll = random.random()
                 if roll < player["special_hit_chance"]:
@@ -687,12 +694,15 @@ def play_game():
                     dmg = int(round(dmg_float))
                     s["hp"] -= dmg
                     print(f"Lucky break, detective. You land a devastating blow! {dmg} damage.")
+                    if sfx_queue: sfx_queue.put('hit')
                 elif roll < player["special_hit_chance"] + player["regular_hit_chance"]:
                     dmg = int(round(player["base_damage"]))
                     s["hp"] -= dmg
                     print(f"Wild-eyed, but effective. Be careful, detective. {dmg} damage.")
+                    if sfx_queue: sfx_queue.put('hit')
                 else:
                     print("Your swing goes wide! No damage.")
+                    if sfx_queue: sfx_queue.put('miss')
             else:
                 print("Indecision could cost your life. No damage.")
             if s["hp"] <= 0:
@@ -707,6 +717,7 @@ def play_game():
             if player["hp"] <= 0:
                 player["hp"] = 0
                 print("Darkness rolls over you. The void encompasses your vision bit by bit. Somewhere, a jukebox plays your funeral dirge, and no one realizes it. Game over, detective.")
+                if sfx_queue: sfx_queue.put('gameover')
                 sys.exit(0)
 
     def check_total_carnage():
@@ -724,6 +735,7 @@ def play_game():
         if sus not in suspects:
             print(f"'{sus}' doesn't match anyone. Try: Aiden, Blake, Alice, Nyx.")
             return
+        if sfx_queue: sfx_queue.put('accuse')
         if sus != RESERVED_KEY_THX1138 and suspects[RESERVED_KEY_THX1138]["detained"]:
             secret_ending()
             return
@@ -758,6 +770,7 @@ def play_game():
 
     def secret_ending():
         nonlocal game_over
+        if sfx_queue: sfx_queue.put('gameover')
         print(f"\nWrong accusation. You made the wrong bet. Very wrong.")
         print(f"Behind you: a soft click. You spin. {get_first_name(suspects[RESERVED_KEY_THX1138]['name'])}, one wrist free, working on the other.")
         print(f"'Did you really think these standard restraints could hold me?' They smile. The predator turns prey, but it dawns on you they're damn good at being either.")
@@ -769,12 +782,14 @@ def play_game():
 
     def nyx_escape_ending():
         nonlocal game_over
+        if sfx_queue: sfx_queue.put('gameover')
         print("Nyx parts their lips once more to reveal their toxic solvent-based smile. Their eyes flash the recognition that's only ever shared between two predators in league with each other. You immediately begin to consider how you'll spin this to the police drone. You scratch your notepad with fervor and get to work destroying the evidence. Why you did this, only you'll ever know, and let's hope it doesn't haunt you any longer than it takes to finish a bottle of absinthe. Few things ever do.\n\nGAME OVER")
         game_over = True
         sys.exit(0)
 
     def ending_correct():
         nonlocal game_over
+        if sfx_queue: sfx_queue.put('jaildoor')
         k = suspects[RESERVED_KEY_THX1138]
         print(f"\n{RED}Everything clicks into place. The whole crooked design.{RESET}")
         print(f"'{get_first_name(k['name'])}, in the office, with the revolver. Victim killed in cold blood. For ego? For fun? For the oldest reason there ever was: because you could.'")
@@ -793,6 +808,7 @@ def play_game():
 
     def ending_fail():
         nonlocal game_over
+        if sfx_queue: sfx_queue.put('gameover')
         k = suspects[RESERVED_KEY_THX1138]
         print("\nYour accusation shatters against the truth like glass against bulkhead.")
         print(f"{get_first_name(k['name'])} has no skeletons in their closet, at least none that are people. 'Poor {player_name}. So close. Yet so... not.'")
@@ -809,6 +825,7 @@ def play_game():
 
     def ending_carnage():
         nonlocal game_over
+        if sfx_queue: sfx_queue.put('gameover')
         print("You look back across the bar. Everyone's dead. Dead folk tell no tales, but there's sure to be plenty living who watch your live-streamed execution. The detective who went completely mad and committed mass murder. Good job, I guess, detective. Maybe you'll solve a case in the next life.\n\nGAME OVER")
         game_over = True
         sys.exit(0)
