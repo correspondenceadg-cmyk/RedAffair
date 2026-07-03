@@ -1,6 +1,6 @@
 [app]
 title = Red Affair
-package.name = com.github.correspondenceadg-cmyk.redaffair
+package.name = redaffair
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,ttf,ogg,wav
