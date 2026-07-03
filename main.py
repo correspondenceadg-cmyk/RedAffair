@@ -61,6 +61,51 @@ LIGHT_THEME = {
 }
 
 
+# ---------- SFX Manager ----------
+class SFXManager:
+    def __init__(self, app):
+        self.app = app
+        self.sounds = {}
+        self.miss_counter = 0
+
+        # List of (event_name, filename)
+        sfx_list = [
+            ('accuse', 'audio/accuse.ogg'),
+            ('gameover', 'audio/GameOver.ogg'),
+            ('fight', 'audio/fight.ogg'),
+            ('miss', 'audio/miss.ogg'),
+            ('miss2', 'audio/miss2.ogg'),
+            ('jaildoor', 'audio/jaildoor.ogg'),
+            ('lvlup', 'audio/lvlup.ogg'),
+            ('take', 'audio/take.ogg'),
+            ('cuffs', 'audio/cuffs.ogg'),
+            ('hit', 'audio/hit.ogg'),
+        ]
+        for event, filename in sfx_list:
+            try:
+                self.sounds[event] = SoundLoader.load(filename)
+            except Exception as e:
+                log_crash(f"Failed to load SFX {filename}: {traceback.format_exc()}")
+
+        self.queue = queue.Queue()
+        Clock.schedule_interval(self._process_queue, 0.05)
+
+    def _process_queue(self, dt):
+        while not self.queue.empty():
+            event = self.queue.get()
+            if not self.app.dynamic_sound_enabled:
+                continue
+            if event == 'miss':
+                # alternate between miss and miss2
+                self.miss_counter += 1
+                key = 'miss' if self.miss_counter % 2 == 1 else 'miss2'
+            else:
+                key = event
+            sound = self.sounds.get(key)
+            if sound:
+                sound.play()
+
+
 # ---------- CRT Overlay ----------
 class CRTOverlay(Widget):
     def __init__(self, **kwargs):
@@ -450,6 +495,9 @@ class GameUI(BoxLayout):
         self.back_button.disabled = True
         if self.game_thread and self.game_thread.is_alive():
             return
+        # Pass SFX queue to game.py
+        app = App.get_running_app()
+        game.sfx_queue = app.sfx_manager.queue
         self.game_thread = threading.Thread(target=self._run_game, daemon=True)
         self.game_thread.start()
 
@@ -860,8 +908,8 @@ class RedAffairApp(App):
     music_info = {
         'audio/track1.ogg': ('Blue Eyes', 'Dotdropper'),
         'audio/track2.ogg': ('What A Shame', 'Dotdropper'),
-        'audio/track3.ogg': ('Not If But When', 'DotDropper'),
-        'audio/track4.ogg': ('Lotus Eaters Anthem', 'Dotdropper'),
+        'audio/track3.ogg': ('Track 3', 'Composer 3'),
+        'audio/track4.ogg': ('Track 4', 'Composer 4'),
     }
     music_index = 0
     music_volume = 0.3
@@ -875,6 +923,7 @@ class RedAffairApp(App):
     siren_timer = None
 
     def build(self):
+        self.sfx_manager = SFXManager(self)
         self.root_widget = RootWidget()
         Clock.schedule_once(lambda dt: self.start_music(), 1)
         Clock.schedule_once(lambda dt: self.start_ambient(), 2)
