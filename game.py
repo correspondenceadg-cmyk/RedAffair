@@ -54,14 +54,14 @@ def play_game():
     print(RED + BLACK_BG + BOLD + border(
         "The Red Affair\n\n"
         "A greasy spoon-dive at the edge of the Pillars of Creation. No sound travels\n"
-        "through the vacuum of space, but the constant debris, gas, and radiation that\n"
-        "beats on the clear polymerate windows makes it sound like the whine of creation\n"
+        "through the vacuum of space, but the microdebris, gases, and radiation that\n"
+        "beat on the clear polymerate windows is the sound of creation\n"
         "on a loop like a scratched magneto-disc.\n"
-        "The air scrubber is on the fritz, but that's not why it's so stuffy in here,\n"
-        "or why the coffee tastes perhaps a little more than just recycled. A body is\n"
+        "The air scrubber is on the fritz, but that's not why it's so stuffy in here \n"
+        "or why the coffee tastes perhaps a little more than just recycled. A corpse is\n"
         "cooling in the back, and it's your job to figure out why.\n\n"
         "Outside the porthole: The Grand Void, silence only ever punctuated by\n"
-        "the occasional existential scream of a dying star, planet, or god.\n\n"
+        "the occasional scream of a dying star, aimless planet, or lost god.\n\n"
         "The airlock is sealed. The unmanned aerospace police drone is forty hours out.\n"
         "Somewhere in this fluorescent flickering palisade of sin, a killer waits.",
         double=True
@@ -72,9 +72,9 @@ def play_game():
 
     player_name = input(f"{RED}{BLACK_BG}Your name, detective, if you subscribe to such niceties: {RESET}").strip()
     if not player_name:
-        player_name = "Myla-Dean"
+        player_name = "Terry"
     print(f"\n{RED}{BLACK_BG}The name's {player_name}. Licensed to poke around in other people's misery.\n")
-    print(f"The universe doesn't care. But you should, and here you are.{RESET}\n")
+    print(f"The universe doesn't care, but you should, and here you are.{RESET}\n")
 
     LEANINGS = ["communist", "fascist", "liberal", "anarchist"]
     print(f"{RED}{BLACK_BG}Before we begin – your, um- political leanings?")
@@ -118,25 +118,25 @@ def play_game():
         "marcus": (
             "Aiden Adams slumps against the cash register like any employee who's\n"
             "realized the universe hates him, his boss tolerates him, and his mother only may have liked him. His beard is\n"
-            "the kind that's seen everything in the perpetual nightlife scene that lures in honeys, hicks, hacks, hackers, and horrors– mostly horrors. He wears a diner uniform standard: black button-up, black pants, red tie, that way you never see it stained with what might be coffee or might be the remnants of a collapsed college student. His eyes are deep wells of calm resignation, the kind you\n"
+            "the kind that's seen everything in the perpetual nightlife scene that lures in honeys, hicks, hacks, hackers, and horrors– mostly horrors. He wears a diner uniform standard: black button-up, black pants, red tie, that way you never see it stained with what might be sauce or might be blood. His eyes are deep wells of calm resignation, the kind you\n"
             "develop when you've watched people die, or maybe even the kind you develop when you're why people die. A syntharette sits crooked behind his ear, and one glows between his lips, because even in space, some men can't let go\n"
             "of their addictions."
         ),
         "napoleon": (
             'Bladovich "Blake" Jughashvili occupies a booth like he\'s planning a wedding alone,\n'
             "and he intends to crash it. ''Heart of Gold, Head of Lead'', reads a sententia in\n"
-            "obscure Na-Min lettering emblazoned across his neck from behind and under his ear\n"
+            "obscure Na-Min lettering emblazoned across his neck from under one ear\n"
             "down towards his chin. He's buff, but still shorter than you'd expect,\n"
-            "shorter than he'd like, and shorter than he would willingly admit. The pompadour\n"
+            "shorter than he'd like, and shorter than he would willingly discuss. The pompadour\n"
             "adds a few inches to his height, but not his dignity. His hands are on the table,\n"
-            "shaking like someone who's completely innocent, and scared out of their wits; maybe\n"
-            "someone who's guilty, and just wasn't cut out for murder and secret keeping. The\n"
+            "shaking like someone who's maybe not completely innocent, but is definitely scared out of their wits; maybe\n"
+            "someone who's guilty, and just wasn't cut out for secret keeping. The\n"
             "napkins scattered around him are covered in various bodily fluids, all from his\n"
             "face. For what? Nobody knows. Probably not even him."
         ),
         "cleopatra": (
             "Alice Oliverae stands by the back door with the bearing of a woman who's\n"
-            "met every goal she laid out in life and found them wanting. Her kohl-rimmed eyes and obsidian rimmed glasses have witnessed the fall of rivals and the rise of ever disappointing replacements. Gold bangles clink on her wrists with every gesture, her outfit is outlandish but somehow still tame. Gold, makeup, and two pins in long stockings made up with gold thread that just doesn't end. She doesn't occupy space so much as allow it the remarkable privilege of containing her."
+            "met every goal she laid out in life and found them wanting. Her kohl-rimmed eyes and obsidian frame glasses have witnessed the fall of rivals and the rise of ever disappointing replacements. Gold bangles clink on her wrists with every gesture,and her outfit is outlandish but somehow still tame; gold, makeup,furs,and two pins that don't end wrapped up in long stockings sewn with cobalt blue thread. She doesn't occupy space so much as allow it the remarkable privilege of containing her."
         ),
         RESERVED_KEY_THX1138: (
             "Nyx Singénero lounges about the back office like they've already been cleared by the investigation. Their posture is a monument to the conviction that they are right and you are merely an inconvenience. The synthjade and anodized chain around their neck catches the flickering white-washed light\n"
