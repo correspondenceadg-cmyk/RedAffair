@@ -25,6 +25,9 @@ jobs:
             libssl-dev
           pip3 install buildozer cython
 
+      - name: Clean Buildozer cache
+        run: rm -rf ~/.buildozer
+
       - name: Build APK
         run: |
           export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
