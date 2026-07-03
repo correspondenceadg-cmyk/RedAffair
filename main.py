@@ -898,21 +898,21 @@ class RedAffairApp(App):
 
     def start_ambient(self):
         try:
-            self.ambient_hum = SoundLoader.load('audio/Crthum.ogg')
+            self.ambient_hum = SoundLoader.load('audio/crthum.ogg')
             if self.ambient_hum:
                 self.ambient_hum.loop = True
-                self.ambient_hum.volume = 0.15
+                self.ambient_hum.volume = 0.2
                 self.ambient_hum.play()
         except Exception as e:
             log_crash(f"Hum load error: {traceback.format_exc()}")
 
         try:
-            self.footstep_sound = SoundLoader.load('audio/Footsteps.ogg')
+            self.footstep_sound = SoundLoader.load('audio/footsteps.ogg')
         except Exception as e:
             log_crash(f"Footstep load error: {traceback.format_exc()}")
 
         try:
-            self.siren_sound = SoundLoader.load('audio/Siren.ogg')
+            self.siren_sound = SoundLoader.load('audio/siren.ogg')
         except Exception as e:
             log_crash(f"Siren load error: {traceback.format_exc()}")
 
