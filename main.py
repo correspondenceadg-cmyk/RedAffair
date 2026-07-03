@@ -629,6 +629,19 @@ class SettingsScreen(Screen):
         self.dynamic_sound_toggle.bind(on_press=self.toggle_dynamic_sound)
         self.layout.add_widget(self.dynamic_sound_toggle)
 
+        self.music_toggle = ToggleButton(
+            text='Music: ON',
+            state='down',
+            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
+            font_size='24sp',
+            background_color=(0.2, 0, 0, 1),
+            color=(1, 1, 1, 1),
+            size_hint=(1, None),
+            height=132
+        )
+        self.music_toggle.bind(on_press=self.toggle_music)
+        self.layout.add_widget(self.music_toggle)
+
         self.track_label = Label(
             text='Now Playing: None',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
@@ -711,11 +724,11 @@ class SettingsScreen(Screen):
 
     def _update_track_label(self):
         app = App.get_running_app()
-        if app.music_sound:
+        if app.music_sound and app.music_enabled:
             info = app.music_info.get(app.music_tracks[app.music_index], ('Unknown', 'Unknown'))
             self.track_label.text = f'Now Playing: {info[0]} - {info[1]}'
         else:
-            self.track_label.text = 'Now Playing: None'
+            self.track_label.text = 'Music Off'
 
     def _update_vol_bar(self, *args):
         val = self.volume_slider.value
@@ -752,6 +765,16 @@ class SettingsScreen(Screen):
         else:
             instance.text = 'Dynamic Sound: OFF'
             app.disable_dynamic_sound()
+
+    def toggle_music(self, instance):
+        app = App.get_running_app()
+        if instance.state == 'down':
+            instance.text = 'Music: ON'
+            app.enable_music()
+        else:
+            instance.text = 'Music: OFF'
+            app.disable_music()
+        self._update_track_label()
 
     def on_volume_change(self, instance, value):
         app = App.get_running_app()
@@ -826,6 +849,7 @@ class RedAffairApp(App):
     current_theme = DARK_THEME
     crt_enabled = True
     dynamic_sound_enabled = True
+    music_enabled = True
 
     music_tracks = [
         'audio/track1.ogg',
@@ -869,7 +893,8 @@ class RedAffairApp(App):
             if self.music_sound:
                 self.music_sound.volume = self.music_volume
                 self.music_sound.loop = True
-                self.music_sound.play()
+                if self.music_enabled:
+                    self.music_sound.play()
                 log_crash("Music started playing")
                 settings_screen = self.root_widget.sm.get_screen('settings')
                 if settings_screen:
@@ -896,12 +921,30 @@ class RedAffairApp(App):
             self.music_sound.unload()
         self.load_music()
 
+    def enable_music(self):
+        self.music_enabled = True
+        if self.music_sound:
+            self.music_sound.play()
+        settings_screen = self.root_widget.sm.get_screen('settings')
+        if settings_screen:
+            settings_screen.volume_slider.disabled = False
+            settings_screen._update_track_label()
+
+    def disable_music(self):
+        self.music_enabled = False
+        if self.music_sound:
+            self.music_sound.stop()
+        settings_screen = self.root_widget.sm.get_screen('settings')
+        if settings_screen:
+            settings_screen.volume_slider.disabled = True
+            settings_screen._update_track_label()
+
     def start_ambient(self):
         try:
             self.ambient_hum = SoundLoader.load('audio/crthum.ogg')
             if self.ambient_hum:
                 self.ambient_hum.loop = True
-                self.ambient_hum.volume = 0.2
+                self.ambient_hum.volume = 0.15
                 self.ambient_hum.play()
         except Exception as e:
             log_crash(f"Hum load error: {traceback.format_exc()}")
