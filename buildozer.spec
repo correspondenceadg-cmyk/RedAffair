@@ -1,6 +1,6 @@
 [app]
 title = Red Affair
-package.name = com.github.correspondenceadg-cmyk.redaffair
+package.name = redaffair
 package.domain = org.example
 source.dir = .
 source.include_exts = py,png,jpg,ttf,ogg,wav
@@ -19,6 +19,7 @@ android.api = 33
 android.minapi = 21
 android.ndk = 25b
 android.sdk = 30
+android.compile_sdk = 33
 android.arch = arm64-v8a
 android.accept_sdk_license = True
 android.build_tools_version = 34.0.0
