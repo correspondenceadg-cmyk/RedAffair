@@ -68,18 +68,17 @@ class SFXManager:
         self.sounds = {}
         self.miss_counter = 0
 
-        # List of (event_name, filename)
         sfx_list = [
-            ('accuse', 'audio/accuse.ogg'),
-            ('gameover', 'audio/GameOver.ogg'),
-            ('fight', 'audio/fight.ogg'),
-            ('miss', 'audio/miss.ogg'),
-            ('miss2', 'audio/miss2.ogg'),
-            ('jaildoor', 'audio/jaildoor.ogg'),
-            ('lvlup', 'audio/lvlup.ogg'),
-            ('take', 'audio/take.ogg'),
-            ('cuffs', 'audio/cuffs.ogg'),
-            ('hit', 'audio/hit.ogg'),
+            ('accuse', 'audio/sfx/accuse.ogg'),
+            ('gameover', 'audio/sfx/GameOver.ogg'),
+            ('fight', 'audio/sfx/fight.ogg'),
+            ('miss', 'audio/sfx/miss.ogg'),
+            ('miss2', 'audio/sfx/miss2.ogg'),
+            ('jaildoor', 'audio/sfx/jaildoor.ogg'),
+            ('lvlup', 'audio/sfx/lvlup.ogg'),
+            ('take', 'audio/sfx/take.ogg'),
+            ('cuffs', 'audio/sfx/cuffs.ogg'),
+            ('hit', 'audio/sfx/hit.ogg'),
         ]
         for event, filename in sfx_list:
             try:
@@ -96,7 +95,6 @@ class SFXManager:
             if not self.app.dynamic_sound_enabled:
                 continue
             if event == 'miss':
-                # alternate between miss and miss2
                 self.miss_counter += 1
                 key = 'miss' if self.miss_counter % 2 == 1 else 'miss2'
             else:
@@ -495,7 +493,6 @@ class GameUI(BoxLayout):
         self.back_button.disabled = True
         if self.game_thread and self.game_thread.is_alive():
             return
-        # Pass SFX queue to game.py
         app = App.get_running_app()
         game.sfx_queue = app.sfx_manager.queue
         self.game_thread = threading.Thread(target=self._run_game, daemon=True)
