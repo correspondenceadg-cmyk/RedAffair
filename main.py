@@ -819,7 +819,7 @@ class RedAffairApp(App):
     ]
     music_info = {
         'audio/track1.ogg': ('Blue Eyes', 'Dotdropper'),
-        'audio/track2.ogg': ('Track 2', 'Composer 2'),
+        'audio/track2.ogg': ('What A Shame', 'DotDropper'),
         'audio/track3.ogg': ('Track 3', 'Composer 3'),
         'audio/track4.ogg': ('Track 4', 'Composer 4'),
     }
