@@ -598,7 +598,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=120
+            height=132
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
         self.layout.add_widget(self.theme_toggle)
@@ -611,10 +611,23 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=120
+            height=132
         )
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         self.layout.add_widget(self.dynamic_lighting_toggle)
+
+        self.dynamic_sound_toggle = ToggleButton(
+            text='Dynamic Sound: ON',
+            state='down',
+            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
+            font_size='24sp',
+            background_color=(0.2, 0, 0, 1),
+            color=(1, 1, 1, 1),
+            size_hint=(1, None),
+            height=132
+        )
+        self.dynamic_sound_toggle.bind(on_press=self.toggle_dynamic_sound)
+        self.layout.add_widget(self.dynamic_sound_toggle)
 
         self.track_label = Label(
             text='Now Playing: None',
@@ -666,7 +679,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=120
+            height=132
         )
         self.next_track_btn.bind(on_press=self.next_track)
         self.layout.add_widget(self.next_track_btn)
@@ -678,7 +691,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=120
+            height=132
         )
         back_btn.bind(on_press=self.go_back)
         self.layout.add_widget(back_btn)
@@ -730,6 +743,15 @@ class SettingsScreen(Screen):
         else:
             instance.text = 'Dynamic Lighting: OFF'
             app.disable_crt()
+
+    def toggle_dynamic_sound(self, instance):
+        app = App.get_running_app()
+        if instance.state == 'down':
+            instance.text = 'Dynamic Sound: ON'
+            app.enable_dynamic_sound()
+        else:
+            instance.text = 'Dynamic Sound: OFF'
+            app.disable_dynamic_sound()
 
     def on_volume_change(self, instance, value):
         app = App.get_running_app()
@@ -803,6 +825,8 @@ class RootWidget(FloatLayout):
 class RedAffairApp(App):
     current_theme = DARK_THEME
     crt_enabled = True
+    dynamic_sound_enabled = True
+
     music_tracks = [
         'audio/track1.ogg',
         'audio/track2.ogg',
@@ -820,9 +844,16 @@ class RedAffairApp(App):
     music_sound = None
     music_started = False
 
+    ambient_hum = None
+    footstep_sound = None
+    siren_sound = None
+    footstep_timer = None
+    siren_timer = None
+
     def build(self):
         self.root_widget = RootWidget()
         Clock.schedule_once(lambda dt: self.start_music(), 1)
+        Clock.schedule_once(lambda dt: self.start_ambient(), 2)
         return self.root_widget
 
     def start_music(self):
@@ -864,6 +895,67 @@ class RedAffairApp(App):
             self.music_sound.stop()
             self.music_sound.unload()
         self.load_music()
+
+    def start_ambient(self):
+        try:
+            self.ambient_hum = SoundLoader.load('audio/Crthum.ogg')
+            if self.ambient_hum:
+                self.ambient_hum.loop = True
+                self.ambient_hum.volume = 0.15
+                self.ambient_hum.play()
+        except Exception as e:
+            log_crash(f"Hum load error: {traceback.format_exc()}")
+
+        try:
+            self.footstep_sound = SoundLoader.load('audio/Footsteps.ogg')
+        except Exception as e:
+            log_crash(f"Footstep load error: {traceback.format_exc()}")
+
+        try:
+            self.siren_sound = SoundLoader.load('audio/Siren.ogg')
+        except Exception as e:
+            log_crash(f"Siren load error: {traceback.format_exc()}")
+
+        self._schedule_footsteps()
+        self._schedule_siren()
+
+    def _schedule_footsteps(self):
+        if not self.dynamic_sound_enabled:
+            return
+        delay = py_random.uniform(7, 21)
+        self.footstep_timer = Clock.schedule_once(lambda dt: self._play_footstep(), delay)
+
+    def _play_footstep(self):
+        if self.dynamic_sound_enabled and self.footstep_sound:
+            self.footstep_sound.play()
+        self._schedule_footsteps()
+
+    def _schedule_siren(self):
+        if not self.dynamic_sound_enabled:
+            return
+        delay = py_random.uniform(21, 42)
+        self.siren_timer = Clock.schedule_once(lambda dt: self._play_siren(), delay)
+
+    def _play_siren(self):
+        if self.dynamic_sound_enabled and self.siren_sound:
+            self.siren_sound.play()
+        self._schedule_siren()
+
+    def enable_dynamic_sound(self):
+        self.dynamic_sound_enabled = True
+        if self.ambient_hum:
+            self.ambient_hum.play()
+        self._schedule_footsteps()
+        self._schedule_siren()
+
+    def disable_dynamic_sound(self):
+        self.dynamic_sound_enabled = False
+        if self.ambient_hum:
+            self.ambient_hum.stop()
+        if self.footstep_timer:
+            self.footstep_timer.cancel()
+        if self.siren_timer:
+            self.siren_timer.cancel()
 
     def enable_crt(self):
         if not self.crt_enabled:
