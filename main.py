@@ -534,8 +534,7 @@ class GameUI(BoxLayout):
 
     def send_input(self, instance):
         text = instance.text.strip()
-        if text:
-            self.input_queue.put(text)
+        self.input_queue.put(text)
         instance.text = ''
 
     def disable_input(self):
