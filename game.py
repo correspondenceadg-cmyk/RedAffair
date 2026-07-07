@@ -8,42 +8,6 @@ def play_game():
     BOLD = '\033[1m'
     RESET = '\033[0m'
 
-    def border(text, width=40, double=False):
-        try:
-            import shutil
-            term_width = shutil.get_terminal_size().columns
-            width = min(width, term_width - 2) if term_width > 20 else width
-        except:
-            pass
-
-        wrap_width = width - 4
-        if wrap_width < 10:
-            wrap_width = 10
-
-        wrapped_lines = []
-        for line in text.split('\n'):
-            if line == '':
-                wrapped_lines.append('')
-            else:
-                wrapped_lines.extend(textwrap.wrap(line, width=wrap_width) or [''])
-
-        max_len = max(len(line) for line in wrapped_lines) if wrapped_lines else 0
-        box_width = max(max_len + 4, width)
-
-        tl = '╔' if double else '┌'
-        tr = '╗' if double else '┐'
-        bl = '╚' if double else '└'
-        br = '╝' if double else '┘'
-        hz = '═' if double else '─'
-        vt = '║' if double else '│'
-
-        top = tl + hz * (box_width - 2) + tr
-        bottom = bl + hz * (box_width - 2) + br
-        middle = ''
-        for line in wrapped_lines:
-            middle += f"{vt} {line.ljust(max_len)} {vt}\n"
-        return f"{top}\n{middle}{bottom}"
-
     def clear_screen():
         print("##CLEARSCREEN##")
 
@@ -51,7 +15,7 @@ def play_game():
         return full_name.split()[0]
 
     clear_screen()
-    print(RED + BLACK_BG + BOLD + border(
+    print(RED + BLACK_BG + BOLD +
         "The Red Affair\n\n"
         "A greasy spoon-dive at the edge of the Pillars of Creation. No sound travels\n"
         "through the vacuum of space, but the constant debris, gas, and radiation that\n"
@@ -63,9 +27,8 @@ def play_game():
         "Outside the porthole: The Grand Void, silence only ever punctuated by\n"
         "the occasional existential scream of a dying star, planet, or god.\n\n"
         "The airlock is sealed. The unmanned aerospace police drone is forty hours out.\n"
-        "Somewhere in this fluorescent flickering palisade of sin, a killer waits.",
-        double=True
-    ) + RESET)
+        "Somewhere in this fluorescent flickering palisade of sin, a killer waits."
+    + RESET)
     print()
     input("Press Enter to begin...")
     clear_screen()
@@ -397,7 +360,7 @@ def play_game():
                 desc += f"\n\n{get_first_name(s['name'])} is handcuffed, radiating silent fury."
             elif s["defeated"]:
                 desc += f"\n\n{get_first_name(s['name'])} is unconscious, dreaming whatever dreams a bruised ego conjures."
-        print(border(desc, width=68))
+        print(desc)
 
     def move(direction):
         nonlocal current_location
@@ -898,7 +861,7 @@ def play_game():
 
     def show_inventory():
         ev_list = '\n'.join(f' - {e}' for e in sorted(clues)) if clues else "You've got nothing. The void stares back. Don't blink."
-        print(border(f"Inventory: {', '.join(inventory) if inventory else 'empty pockets'}\nCuffs: {handcuffs}/2\nHP: {player['hp']}/{player['max_hp']}\n\nEvidence ({evidence_collected}/8):\n{ev_list}", width=68))
+        print(f"Inventory: {', '.join(inventory) if inventory else 'empty pockets'}\nCuffs: {handcuffs}/2\nHP: {player['hp']}/{player['max_hp']}\n\nEvidence ({evidence_collected}/8):\n{ev_list}")
 
     EASTER_EGG_PHRASE = "Im an existentialist-absurdist-gnostic-agnostic-secular-true path unitarian-marxist-leninist-maoist multi-level marketer."
 
@@ -914,7 +877,7 @@ def play_game():
         if not raw:
             return None
         if raw.lower() == EASTER_EGG_PHRASE.lower():
-            print(border("You realize once today is over, tomorrow will never come. Red will fade to black, and you will wake up in another reality, as another person, and this experience may never truly grow roots and flourish in your psyche. You will simply move onto the next life.", width=68))
+            print("You realize once today is over, tomorrow will never come. Red will fade to black, and you will wake up in another reality, as another person, and this experience may never truly grow roots and flourish in your psyche. You will simply move onto the next life.")
             return None
         parts = raw.split()
         first = parts[0].lower()
@@ -948,7 +911,7 @@ def play_game():
         return raw
 
     def help_text():
-        print(border("""
+        print("""
 Commands (shortcut):
   go <place>       (g)  – move between rooms
   look             (l)  – survey current location
@@ -967,7 +930,7 @@ Commands (shortcut):
 Rooms: counter, dining, kitchen, office
 Suspects: Aiden Adams, Alice Oliverae, Blake Jughashvili, Nyx Singénero
           (use first name, last name, or full name)
-""", width=68))
+""")
 
     clear_screen()
     hud()
