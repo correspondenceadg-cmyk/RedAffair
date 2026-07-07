@@ -307,7 +307,6 @@ def play_game():
         }
     }
 
-    # Randomly pick signet ring or galactic ID
     ring_or_id = random.choice(["signet ring", "galactic_id"])
     locations["office"]["items"].remove("ring_or_id")
     locations["office"]["items"].append(ring_or_id)
@@ -354,26 +353,26 @@ def play_game():
 
     MISLEADING_DIALOGUE = {
         "luka_says_cook_threatened": "'That cook... I heard her say she'd shut the victim up for good.'",
-        "luka_says_patron_was_outside": "'The old man? He went outside right before the shot. I saw the airlock cycle.'",
-        "luka_says_ring_was_planted": "'The ring... I think someone put it in my locker. I'm being framed.'",
+        "luka_says_patron_was_outside": "'The old man? He went outside right before the shot. I swear I heard the airlock cycle.'",
+        "luka_says_ring_was_planted": "'The ring... I think someone else took it, or maybe she lost it. I'm being framed. She was a bitch anyway.'",
         "adeline_says_janitor_stole_ring": "'Elliot? He's been obsessed with that ring. Probably sold it to cover his debts.'",
-        "adeline_says_alice_argued": "'Alice and the victim had a screaming match. Something about a promotion.'",
-        "adeline_says_victim_was_armed": "'The victim carried a small knife. She wasn't defenceless.'",
+        "adeline_says_alice_argued": "'Alice and the victim had a screaming match. Something about a promotion, or a client...I don't really remember.'",
+        "adeline_says_victim_was_armed": "'The victim carried a small knife. She wasn't defenceless. She was ruthless and cruel. I'm not surprised she got got.'",
         "hemlock_says_blake_threatened": "'That short fellow? He was muttering threats under his breath all evening.'",
         "hemlock_says_airlock_heard": "'I heard the airlock hiss. Someone came or went right before the bang.'",
         "hemlock_says_nyx_was_calm": "'Nyx? They were the calmest person in the room when it happened. Suspiciously calm.'",
-        "aiden_says_alice_promoted": "'Alice got the promotion the victim wanted. That's motive enough.'",
-        "aiden_says_alice_paycheck": "'Alice's paycheck was docked because of the victim. She was furious.'",
-        "aiden_says_victim_angry": "'The victim was angry at everyone. It was only a matter of time.'",
-        "alice_blake_screenshots": "'Blake sent threatening messages to the victim. I have screenshots.'",
-        "alice_victim_msg_afraid": "'The victim told me she was afraid of someone here.'",
+        "aiden_says_alice_promoted": "'Alice never got the promotion that she wanted. That's motive enough.'",
+        "aiden_says_alice_paycheck": "'Alice's paycheck was docked because of the victim. She was furious. At least, that's how I remember it.'",
+        "aiden_says_victim_angry": "'The victim was angry at everyone. It was only a matter of time. I don't know what it was, but she was in a dark place, and she always made that everyone else's problem too.'",
+        "alice_blake_screenshots": "'Blake sent threatening messages to the victim. I have screenshots. Here, let me send them to you.'",
+        "alice_victim_msg_afraid": "'The victim told me she was scared to be here. I'm not sure why she was here, but she was.'",
         "alice_victim_cant_stay_home": "'The victim said she couldn't stay in her apartment anymore. Someone was harassing her.'",
-        "blake_nyx_bully": "'Nyx bullied the victim constantly. It was psychological warfare.'",
-        "blake_nyx_called_out": "'Nyx was called out by the victim in front of everyone. Humiliated.'",
-        "blake_victim_distant": "'The victim had become distant lately. She knew something was coming.'",
-        "nyx_aiden_resented": "'Aiden resented the victim for reporting him to management.'",
-        "nyx_alice_promoted_over_victim": "'Alice leapfrogged the victim. She'd waited years for that spot.'",
-        "nyx_victim_didnt_want_return": "'The victim didn't want to come back here. She knew it wasn't safe.'"
+        "blake_nyx_bully": "'Nyx bullied the victim constantly. It was psychological warfare. I don't know if they were together or if Nyx was just holding her hostage.'",
+        "blake_nyx_called_out": "'Nyx was called out by the victim in front of everyone. Humiliated. She didn't react, but we all know she was waiting for the right moment.'",
+        "blake_victim_distant": "'The victim had become distant lately. She knew something was coming. I tried to reach out to her. She just wouldn't let me.'",
+        "nyx_aiden_resented": "'Aiden resented the victim for reporting him to management. He had plenty run-ins with her, and every one was something he'd whine about like a school-girl.'",
+        "nyx_alice_promoted_over_victim": "'Alice leapfrogged her for that promotion. She'd waited years for that spot, and she didn't think Alice deserved it.'",
+        "nyx_victim_didnt_want_return": "'The victim didn't want to come back here. She knew it wasn't safe. She just couldn't stay in her apartment either, I'm sure you've heard the rumors, right? How Blake was terrorizing her?'"
     }
 
     def hud():
