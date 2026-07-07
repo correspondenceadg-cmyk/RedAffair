@@ -905,7 +905,7 @@ class RedAffairApp(App):
         'audio/track1.ogg': ('Blue Eyes', 'Dotdropper'),
         'audio/track2.ogg': ('What A Shame', 'Dotdropper'),
         'audio/track3.ogg': ('Track 3', 'Composer 3'),
-        'audio/track4.ogg': ('Track 4', 'Composer 4'),
+        'audio/track4.ogg': ('Lotus Eater Anthem', 'Dotdropler'),
     }
     music_index = 0
     music_volume = 0.3
