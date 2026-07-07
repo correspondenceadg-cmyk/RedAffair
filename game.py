@@ -39,7 +39,8 @@ def play_game():
     print(f"\n{RED}{BLACK_BG}The name's {player_name}. Licensed to poke around in other people's misery.\n")
     print(f"The universe doesn't care. But you should, and here you are.{RESET}\n")
 
-    LEANINGS = ["communist", "fascist", "liberal", "anarchist"]
+    LEANINGS = ["communist", "fascist", "liberal", "anarchist",
+                "communist", "fascist", "liberal"]
     print(f"{RED}{BLACK_BG}Before we begin – your, um- political leanings?")
     print("(It matters as much as anything matters in a pressurized tin can. Turns out? Quite a lot.)")
     print("1. Communist – Strong and welcoming. The people united will never be defeated.")
@@ -74,7 +75,10 @@ def play_game():
         "marcus": shuffled_leans[0],
         "napoleon": shuffled_leans[1],
         "cleopatra": shuffled_leans[2],
-        RESERVED_KEY_THX1138: shuffled_leans[3]
+        "janitor": shuffled_leans[3],
+        "cook": shuffled_leans[4],
+        "patron": shuffled_leans[5],
+        RESERVED_KEY_THX1138: shuffled_leans[6]
     }
 
     suspect_descriptions = {
@@ -106,7 +110,10 @@ def play_game():
             "and glares in tandem with Nyx right at you with what feels like spite, but may be mild annoyance. Their hair is an auburn tinted burgundy, pulled into a bun and held in place with chopsticks placed with unwavering certainty. When they speak,\n"
             "their voice has the texture of gravel being crushed into smaller, more compliant gravel. They smell like an ashtray and sound like every smoke they've ever had left enough tar behind to preserve the mesozoic.  There's something in their eyes – not warmth,\n"
             "exactly, but the cold fusion of absolute conviction. Their feet are on their desk at the end of two crossed legs, but they don't seem to be waiting for you to speak. They seem to already know what you're going to say. Maybe they just know everything."
-        )
+        ),
+        "janitor": "Elliot Luka sweeps the floor with the resigned air of a man who knows that Sisyphus is content, if only because he is Sisyphus. His stained speedsuit and calloused hands speak of endless circuits against invasive pathogens, pests, and careless spills. He rarely speaks, but his eyes flick toward every sound. He's squirrely, yet composed enough that most wouldn't notice. You do.",
+        "cook": "Adeline Malovega stands over the carbon steel griddle, eyes locked a thousand miles through the cook-top beyond the floor. The murder has shut down her kitchen and, apparently, her mind. Tattoos flow around her forearms past her biceps into unique sleeves, the true meaning of which only she would know. Her hair is up in a bun with a hairnet wrapped around her brow and lips that twitch as she breaks her catatonia to notice you.",
+        "patron": "Alexander Hemlock sits in the corner booth, a cup of cold black coffee before him. His hands tremble, but his eyes are sharp – possibly nerves, possibly a neurodisease. He’s been here since before the murder, and the staff treat him like furniture; not a beautiful armoire, but a living‑room coffee table that’s never seen a coaster and is as replaceable as it is functional."
     }
 
     suspects = {
@@ -153,6 +160,39 @@ def play_game():
             "characteristics": ["detached", "strong", "unusual", "calculating"],
             "curses": ["state sponsored thug", "gas-cow", "auctioneer of justice", "unbelievably fucking stupid asshole", "viscera venture capitalist"],
             "exonerated": False
+        },
+        "janitor": {
+            "name": "Elliot Luka",
+            "alive": True, "hostile": False, "detained": False, "defeated": False,
+            "hp": 25,
+            "motive": "The victim accused him of stealing a valuable ring. He was written up, his pay docked, and spent his next several days searching for it, even on his day off, even after everyone assumed he was merely pretending to look.",
+            "guilty": False,
+            "lean": suspect_leans["janitor"],
+            "characteristics": ["quiet", "observant", "nervous", "diligent"],
+            "curses": ["cheese dick", "pig bitch", "evolved yeast infection", "bureaucratic non-entity", "nosey fucking freak"],
+            "exonerated": False
+        },
+        "cook": {
+            "name": "Adeline Malovega",
+            "alive": True, "hostile": False, "detained": False, "defeated": False,
+            "hp": 25,
+            "motive": "The victim was her landlord, often demanding rent when she ate, sometimes three weeks in a row. Some people just can't stand a leech. Can you relate?",
+            "guilty": False,
+            "lean": suspect_leans["cook"],
+            "characteristics": ["reliable", "frenetic", "avoidant", "unpredictable"],
+            "curses": ["Mr. Jerk", "death-jockey", "short-order disappointment", "needle-dick double bitch", "space-pig"],
+            "exonerated": False
+        },
+        "patron": {
+            "name": "Alexander Hemlock",
+            "alive": True, "hostile": False, "detained": False, "defeated": False,
+            "hp": 25,
+            "motive": "He has none, but his whereabouts are unaccounted for by anyone else but him. He claims to have used the bathroom just before the incident, but others claim they didn't see him actually walk that direction, but instead out the front door.",
+            "guilty": False,
+            "lean": suspect_leans["patron"],
+            "characteristics": ["forgetful", "blasé", "lonely", "old-fashioned"],
+            "curses": ["pussywillow", "cuck", "achey half-dead punk", "idiot child", "gun sucking piss sniffing shitheel"],
+            "exonerated": False
         }
     }
 
@@ -175,6 +215,16 @@ def play_game():
         "nyx": RESERVED_KEY_THX1138,
         "singénero": RESERVED_KEY_THX1138,
         "nyx singénero": RESERVED_KEY_THX1138,
+        "elliot": "janitor",
+        "luka": "janitor",
+        "elliot luka": "janitor",
+        "adeline": "cook",
+        "malovega": "cook",
+        "adeline malovega": "cook",
+        "alex": "patron",
+        "alexander": "patron",
+        "hemlock": "patron",
+        "alexander hemlock": "patron",
     }
 
     def resolve_suspect(name):
@@ -187,6 +237,9 @@ def play_game():
         "marcus": "detached",
         "napoleon": "strong",
         "cleopatra": "unusual",
+        "janitor": "calculating",
+        "cook": "frenetic",
+        "patron": "unusual",
         RESERVED_KEY_THX1138: None
     }
 
@@ -196,21 +249,21 @@ def play_game():
                 "THE COUNTER – A scratched carbonite slab that's seen more elbows than a\n"
                 "gala dance floor with Fred Astaire and Bob Fosse. The cash register is smashed open, PCB, chits, change, and Valerian Draughma spilled across the floor like so many things have been over the years, leaving a sticky film beneath your shoes.\n"
                 "The entrance is sealed with a field of plasma that hums something like a funeral dirge. Maybe you're imagining that last bit, but visually, audibly, and tactically if you must, you do know the field is there.\n\n"
-                + suspect_descriptions["marcus"]
+                + suspect_descriptions["marcus"] + "\n\n" + suspect_descriptions["janitor"]
             ),
             "items": [],
-            "suspect": "marcus",
-            "searchable": ["aiden_alibi"]
+            "suspects": ["marcus", "janitor"],
+            "searchable": ["aiden_alibi", "luka_alibi"]
         },
         "dining": {
             "desc": (
                 "THE DINING AREA – Booths line the walls placed in opposition with a white table between them, and the walls undecorated except for the art deco murals that fill the otherwise unremarkable space; one to each wall. Upholstered in synthleather and what was once blue vinyl, they are now\n"
                 "faded and cracking across every surface except one patch now the color of dried blood and and what was once, presumably, someone's personality. Napkins, sauce, seasoning, and marmalade are strewn across one tabletop, the rest being various gradations of clean, none of which seem hygienic. The jukebox is stuck on a single song – an avant garde noise album, now academically classical hundreds of years later and light-years away, but it vibrates your fillings.\n\n"
-                + suspect_descriptions["napoleon"]
+                + suspect_descriptions["napoleon"] + "\n\n" + suspect_descriptions["patron"]
             ),
             "items": [],
-            "suspect": "napoleon",
-            "searchable": ["blake_alibi"],
+            "suspects": ["napoleon", "patron"],
+            "searchable": ["blake_alibi", "hemlock_missing"],
             "hidden_revolver": True
         },
         "kitchen": {
@@ -221,28 +274,47 @@ def play_game():
                 "its porthole showing nothing but the indifferent void. Every kitchen has its\n"
                 "secrets, but you feel something extra weighing down the ether in this one.\n"
                 "You intend to find what it is, whatever it takes, and whoever's responsible.\n\n"
-                + suspect_descriptions["cleopatra"]
+                + suspect_descriptions["cleopatra"] + "\n\n" + suspect_descriptions["cook"] +
+                "\nA corkboard hangs beside the back door, pinned with old schedules, a faded menu, and a flier."
             ),
             "items": ["candlestick"],
-            "suspect": "cleopatra",
-            "searchable": ["alice_alibi"]
+            "suspects": ["cleopatra", "cook"],
+            "searchable": ["alice_alibi", "adeline_timestamps"],
+            "examinables": ["corkboard", "freezer"]
         },
         "office": {
             "desc": (
-                "THE BACK OFFICE – A cramped drywall cage full of stale smoke and broken promises of raises, promotions, and staff openings. The body of a man lies sprawled on the floor, like a taxidermy rug by the world's laziest psychopath. A single gunshot wound to the temple. It's neat, professional, and almost polite. Blood has pooled in the cracks of a linoleum floor that screamed despair and desperation long before it became\n"
-                "a crime scene. The smell is...complex. You draw in the bouquet like the seasoned professional you are.  Gunpowder, iron, acetone, and something sweet all separate as components in your mind through a mastery in the art of olfactory reverse-engineering.  A torn sheet of paper flutters near the desk.\n\n"
+                "THE BACK OFFICE – A cramped drywall cage full of stale smoke and broken promises of raises, promotions, and staff openings. "
+                "A torn sheet of paper flutters near the desk.\n\n"
                 + suspect_descriptions[RESERVED_KEY_THX1138]
             ),
-            "items": ["poison vial"],
-            "suspect": RESERVED_KEY_THX1138,
+            "items": ["poison vial", "ring_or_id"],
+            "suspects": [RESERVED_KEY_THX1138],
             "searchable": ["nyx_message"],
+            "body_examinable": False
+        },
+        "bathroom": {
+            "desc": (
+                "THE BATHROOM – A cramped, flicker-lit cubicle. The air smells of cheap disinfectant and stale regret. "
+                "The victim lies here. She’s propped against the wall like someone sat her down for a chat she’ll never finish. "
+                "A single gunshot wound to the temple – neat, professional, almost polite. "
+                "Blood has pooled in the cracks of a linoleum floor that screamed despair long before it became a crime scene."
+            ),
+            "items": [],
+            "suspects": [],
+            "searchable": [],
             "body_examinable": True
         }
     }
 
+    # Randomly pick signet ring or galactic ID
+    ring_or_id = random.choice(["signet ring", "galactic_id"])
+    locations["office"]["items"].remove("ring_or_id")
+    locations["office"]["items"].append(ring_or_id)
+
     current_location = "counter"
     inventory = []
-    handcuffs = 2
+    handcuffs = 3
     clues = set()
     evidence_collected = 0
     body_examined = False
@@ -274,12 +346,39 @@ def play_game():
         "marcus": ["aiden_says_alice_promoted", "aiden_says_alice_paycheck", "aiden_says_victim_angry"],
         "cleopatra": ["alice_blake_screenshots", "alice_victim_msg_afraid", "alice_victim_cant_stay_home"],
         "napoleon": ["blake_nyx_bully", "blake_nyx_called_out", "blake_victim_distant"],
-        RESERVED_KEY_THX1138: ["nyx_aiden_resented", "nyx_alice_promoted_over_victim", "nyx_victim_didnt_want_return"]
+        RESERVED_KEY_THX1138: ["nyx_aiden_resented", "nyx_alice_promoted_over_victim", "nyx_victim_didnt_want_return"],
+        "janitor": ["luka_says_cook_threatened", "luka_says_patron_was_outside", "luka_says_ring_was_planted"],
+        "cook": ["adeline_says_janitor_stole_ring", "adeline_says_alice_argued", "adeline_says_victim_was_armed"],
+        "patron": ["hemlock_says_blake_threatened", "hemlock_says_airlock_heard", "hemlock_says_nyx_was_calm"]
+    }
+
+    MISLEADING_DIALOGUE = {
+        "luka_says_cook_threatened": "'That cook... I heard her say she'd shut the victim up for good.'",
+        "luka_says_patron_was_outside": "'The old man? He went outside right before the shot. I saw the airlock cycle.'",
+        "luka_says_ring_was_planted": "'The ring... I think someone put it in my locker. I'm being framed.'",
+        "adeline_says_janitor_stole_ring": "'Elliot? He's been obsessed with that ring. Probably sold it to cover his debts.'",
+        "adeline_says_alice_argued": "'Alice and the victim had a screaming match. Something about a promotion.'",
+        "adeline_says_victim_was_armed": "'The victim carried a small knife. She wasn't defenceless.'",
+        "hemlock_says_blake_threatened": "'That short fellow? He was muttering threats under his breath all evening.'",
+        "hemlock_says_airlock_heard": "'I heard the airlock hiss. Someone came or went right before the bang.'",
+        "hemlock_says_nyx_was_calm": "'Nyx? They were the calmest person in the room when it happened. Suspiciously calm.'",
+        "aiden_says_alice_promoted": "'Alice got the promotion the victim wanted. That's motive enough.'",
+        "aiden_says_alice_paycheck": "'Alice's paycheck was docked because of the victim. She was furious.'",
+        "aiden_says_victim_angry": "'The victim was angry at everyone. It was only a matter of time.'",
+        "alice_blake_screenshots": "'Blake sent threatening messages to the victim. I have screenshots.'",
+        "alice_victim_msg_afraid": "'The victim told me she was afraid of someone here.'",
+        "alice_victim_cant_stay_home": "'The victim said she couldn't stay in her apartment anymore. Someone was harassing her.'",
+        "blake_nyx_bully": "'Nyx bullied the victim constantly. It was psychological warfare.'",
+        "blake_nyx_called_out": "'Nyx was called out by the victim in front of everyone. Humiliated.'",
+        "blake_victim_distant": "'The victim had become distant lately. She knew something was coming.'",
+        "nyx_aiden_resented": "'Aiden resented the victim for reporting him to management.'",
+        "nyx_alice_promoted_over_victim": "'Alice leapfrogged the victim. She'd waited years for that spot.'",
+        "nyx_victim_didnt_want_return": "'The victim didn't want to come back here. She knew it wasn't safe.'"
     }
 
     def hud():
         print(RED + BLACK_BG + "╔══ HUD ═══════════════════════════════════════════╗")
-        print(f"║ Location: {current_location.ljust(8)}  Cuffs: {handcuffs}/2    HP: {player['hp']}/{player['max_hp']}   ║")
+        print(f"║ Location: {current_location.ljust(8)}  Cuffs: {handcuffs}/3    HP: {player['hp']}/{player['max_hp']}   ║")
         print("╚══════════════════════════════════════════════════╝" + RESET)
 
     def add_evidence(ev_id):
@@ -346,10 +445,10 @@ def play_game():
             desc += "\nThe napkin dispenser is empty – you already liberated its secret."
         if current_location == "office" and "nyx_message" in clues:
             desc += "\nThe torn paper is gone. Its absence feels louder than its presence."
-        if current_location == "office" and not body_examined:
-            desc += "\nThe body waits. Patient as only the dead can be."
-        sus_key = loc.get("suspect")
-        if sus_key:
+        if current_location == "bathroom" and body_examined:
+            desc += "\nThe body remains, patient as only the dead can be."
+        sus_keys = loc.get("suspects", [])
+        for sus_key in sus_keys:
             s = suspects[sus_key]
             if s["exonerated"]:
                 desc += f"\n\n{get_first_name(s['name'])} is here, but they've been completely exonerated. Not worth your time."
@@ -370,7 +469,7 @@ def play_game():
             hud()
             describe_location()
         else:
-            print("Not a room. Try: counter, dining, kitchen, office.")
+            print("Not a room. Try: counter, dining, kitchen, office, bathroom.")
 
     def search():
         nonlocal revolver_found
@@ -391,26 +490,61 @@ def play_game():
             add_evidence("aiden_alibi")
             trust_change("marcus", 1)
             return
+        if current_location == "counter" and "luka_alibi" not in clues:
+            print("A wet floor sign and a pristine sheen near the counter. Elliot's work, no doubt.")
+            add_evidence("luka_alibi")
+            trust_change("janitor", 1)
+            return
         if current_location == "dining" and "blake_alibi" not in clues:
             print("Time-stamped napkin. Blake's scribblings. He was here all evening writing some sort of...polemic? Seems pretty unlikely he's your man.")
             add_evidence("blake_alibi")
             trust_change("napoleon", 1)
+            return
+        if current_location == "dining" and "hemlock_missing" not in clues:
+            print("An old coffee receipt. The timestamp is hours before the murder, but it doesn't confirm his whereabouts during.")
+            add_evidence("hemlock_missing")
+            trust_change("patron", 1)
             return
         if current_location == "kitchen" and "alice_alibi" not in clues:
             print("Bus ticket stub. The schedule readout on your personal device confirms Alice would have arrived just before the shot, maybe even just after. Well, that dog just don't hunt.")
             add_evidence("alice_alibi")
             trust_change("cleopatra", 1)
             return
+        if current_location == "kitchen" and "adeline_timestamps" not in clues:
+            print("A stock bucket with a timestamped order docket. Adeline's alibi checks out, at least on the surface.")
+            add_evidence("adeline_timestamps")
+            trust_change("cook", 1)
+            return
         print("Nothing. Nothing worth mentioning anyway, just grease, despair, and the miasma of mystery.")
 
     def examine(item):
         nonlocal body_examined
-        if item == "body" and current_location == "office":
+        if item == "body" and current_location == "bathroom":
             if not body_examined:
                 body_examined = True
                 print("The victim appears to be between the ages of 25 and 30. Feminine. Clothes are in tact, the wallet is in hand. From the look of it, it doesn't seem it ever left her fist. She's approximately 5 feet tall. Her makeup is done, smeared only from the blood. For a brief moment, you wonder what foundation she used. You've only ever heard of makeup smudging in old films.\n\nThe victim's face: mild surprise. Death wasn't so much terrifying as much as it was rude. Between the eyes is a bullet wound: neat, centered, professional even. Someone knew what they were doing.")
             else:
                 print("The body remains. It hasn't changed. Corpses rarely do.")
+        elif item == "corkboard" and current_location == "kitchen":
+            print("The corkboard is a collage of fading schedules, a yellowed menu, and a crisp flier for 'Reyes Properties'. The same name as on the victim's ID, if you've seen it.")
+            if "galactic_id" in inventory or "signet ring" in inventory:
+                print("The connection clicks: the victim owned the complex where Adeline lives.")
+        elif item == "freezer" and current_location == "kitchen":
+            print("The walk-in freezer hums softly. Stacked inside are bulk ingredients, a half-empty case of synth-crab, and a stock bucket with a timestamped order docket pinned to its lid.")
+            if "adeline_timestamps" not in clues:
+                add_evidence("adeline_timestamps")
+                trust_change("cook", 1)
+        elif item in ["signet ring", "galactic_id"] and item in locations[current_location]["items"]:
+            if item == "signet ring":
+                print("A heavy silver ring, engraved with the initials E.R. It feels cold and important.")
+            else:
+                print("The ID reads 'E. Reyes' with a photo of the victim. The address lists a building complex owned by a shell company.")
+            inventory.append(item)
+            locations[current_location]["items"].remove(item)
+        elif item == "poison vial" and item in locations[current_location]["items"]:
+            print("A small vial of clear liquid. It smells faintly of almonds. Cyanide, maybe. Or just bad coffee syrup.")
+            inventory.append(item)
+            locations[current_location]["items"].remove(item)
         else:
             print(f"You give the {item} a good look over. It's definitely a {item}. What were you expecting?")
 
@@ -427,13 +561,13 @@ def play_game():
     def talk(sus):
         nonlocal nyx_escape_offered
         if not sus:
-            print("Who did you want to talk to? Try: Aiden, Blake, Alice, Nyx (or their last names).")
+            print("Who did you want to talk to? Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander (or their last names).")
             return
         resolved = resolve_suspect(sus)
         if resolved:
             sus = resolved
         if sus not in suspects:
-            print(f"'{sus}' is not a person here. Try: Aiden Adams, Blake Jughashvili, Alice Oliverae, Nyx Singénero.")
+            print(f"'{sus}' is not a person here. Try: Aiden Adams, Blake Jughashvili, Alice Oliverae, Nyx Singénero, Elliot Luka, Adeline Malovega, Alexander Hemlock.")
             return
         s = suspects[sus]
         if s["exonerated"]:
@@ -448,7 +582,8 @@ def play_game():
         if s["hostile"]:
             print(f"{get_first_name(s['name'])} fixes you with a stare that could curdle deuterium. No conversation today.")
             return
-        if locations[current_location].get("suspect") != sus:
+        loc_suspects = locations[current_location].get("suspects", [])
+        if sus not in loc_suspects:
             print(f"{get_first_name(s['name'])} isn't here. Space is big. This diner is small. Try the right room.")
             return
 
@@ -456,6 +591,11 @@ def play_game():
         print(f"Trust: {trust[sus]}/3 | Lean: {s['lean']}")
         if trust[sus] == 3 and revealed_characteristic[sus] not in traits_revealed:
             reveal_characteristic(sus)
+
+        if sus == "cook" and trust[sus] >= 2:
+            if "cook_landlord" not in talk_history:
+                talk_history["cook_landlord"] = True
+                print(f"{get_first_name(s['name'])} suddenly blurts out: 'The victim... she was my landlord. Always hounding me for rent. Can you believe it?'")
 
         if sus == RESERVED_KEY_THX1138 and trust[sus] == 3 and not nyx_escape_offered:
             nyx_escape_offered = True
@@ -480,6 +620,12 @@ def play_game():
                 options.append("did you see anything")
             if sus == "cleopatra" and "alice_witness" not in clues:
                 options.append("the argument")
+            if sus == "janitor" and "luka_swept" not in clues:
+                options.append("the floor")
+            if sus == "cook" and "adeline_heard" not in clues:
+                options.append("the office")
+            if sus == "patron" and "hemlock_yelling" not in clues:
+                options.append("the noise")
             for i, opt in enumerate(options, 1):
                 print(f"{i}. Ask about {opt}")
             print("0. Step away")
@@ -515,6 +661,21 @@ def play_game():
                     if "alice_alibi" not in clues:
                         add_evidence("alice_alibi")
                         trust_change("cleopatra", 1)
+                elif sus == "janitor":
+                    print("'I was mopping the floor by the counter the whole time. I always do the bathrooms thrice a day; morning, after lunch rush, closing. Check the floor, see the sheen? Notice the wet floor sign. It’s still up.'")
+                    if "luka_alibi" not in clues:
+                        add_evidence("luka_alibi")
+                        trust_change("janitor", 1)
+                elif sus == "cook":
+                    print("'I was prepping vegetables when the shit hit the fan. The stock bucket is all time‑stamped. Please, check them out. Alice and I were chatting after she finished her call.'")
+                    if "adeline_timestamps" not in clues:
+                        add_evidence("adeline_timestamps")
+                        trust_change("cook", 1)
+                elif sus == "patron":
+                    print("'I’ve been sitting here all evening. The staff can confirm I never left this booth except to drain the old lead pipe.'")
+                    if "hemlock_missing" not in clues:
+                        add_evidence("hemlock_missing")
+                        trust_change("patron", 1)
                 elif sus == RESERVED_KEY_THX1138:
                     print(f"'Working. Office. Alone. Is that a crime?' *Muttering '{curse}' under breath. Syntharette twitching.")
             elif topic == "motive":
@@ -543,6 +704,18 @@ def play_game():
                 print(f"'I heard loud voices from the office. {suspects[RESERVED_KEY_THX1138]['name']} and the victim. Nothing civil about it, but then, when are *they* ever civil? '")
                 add_evidence("alice_witness")
                 trust_change("cleopatra", 1)
+            elif topic == "the floor" and sus == "janitor":
+                print("'Someone walked towards the office with a determined stride. Strong, purposeful. Not a casual stroll.'")
+                add_evidence("luka_swept")
+                trust_change("janitor", 1)
+            elif topic == "the office" and sus == "cook":
+                print("'I heard a loud argument from the office. A woman’s voice, and someone responding calmly. Chilling.'")
+                add_evidence("adeline_heard")
+                trust_change("cook", 1)
+            elif topic == "the noise" and sus == "patron":
+                print("'There was yelling near the office. I couldn’t make out the words, but it was heated.'")
+                add_evidence("hemlock_yelling")
+                trust_change("patron", 1)
 
     def threaten(sus):
         if not sus:
@@ -552,7 +725,7 @@ def play_game():
         if resolved:
             sus = resolved
         if sus not in suspects:
-            print(f"'{sus}' doesn't match any suspect. Try: Aiden, Blake, Alice, Nyx.")
+            print(f"'{sus}' doesn't match any suspect. Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander.")
             return
         s = suspects[sus]
         if s["exonerated"]:
@@ -564,7 +737,8 @@ def play_game():
         if s["detained"]:
             print("Cuffed. Threatening them now is just poor sportsmanship.")
             return
-        if locations[current_location].get("suspect") != sus:
+        loc_suspects = locations[current_location].get("suspects", [])
+        if sus not in loc_suspects:
             print("Threatening the air. Bold. Ineffective.")
             return
         curse = random.choice(s["curses"]) if s["curses"] else ""
@@ -579,6 +753,13 @@ def play_game():
             for s2 in suspects:
                 if s2 != sus:
                     trust_change(s2, -1)
+        elif sus == "janitor":
+            print(f"He stammers. 'Okay! Okay! I saw {suspects[RESERVED_KEY_THX1138]['name']} go into the office just before it happened. Please don't hurt me!'")
+            trust_change("janitor", 1)
+        elif sus == "cook":
+            print("She stares through you. 'Threats? In my kitchen? You're either brave or stupid.' She doesn't break, but you see a flicker of fear.")
+        elif sus == "patron":
+            print("He chuckles. 'Son, I've been threatened by people twice your size and half your nerve. You'll need to do better.'")
         elif sus == RESERVED_KEY_THX1138:
             print(f"Their face hardens into something between complete disdain and total disregard. 'No proof, no case, no hope, detective.' They seem much more hostile now. Congratulations.")
             s["hostile"] = True
@@ -595,7 +776,7 @@ def play_game():
         if resolved:
             sus = resolved
         if sus not in suspects:
-            print(f"'{sus}' isn't a suspect. Try: Aiden, Blake, Alice, Nyx.")
+            print(f"'{sus}' isn't a suspect. Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander.")
             return
         s = suspects[sus]
         if s["exonerated"]:
@@ -604,7 +785,8 @@ def play_game():
         if not s["alive"] or s["defeated"] or s["detained"]:
             print("You've already detained this one. Another set of cuffs would be redundant, don't you think?")
             return
-        if locations[current_location].get("suspect") != sus:
+        loc_suspects = locations[current_location].get("suspects", [])
+        if sus not in loc_suspects:
             print("They're not in here and ain't telekinetic. Not yet, anyway.")
             return
         handcuffs -= 1
@@ -620,7 +802,7 @@ def play_game():
         if resolved:
             sus = resolved
         if sus not in suspects:
-            print(f"'{sus}' isn't a suspect. Try: Aiden, Blake, Alice, Nyx.")
+            print(f"'{sus}' isn't a suspect. Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander.")
             return
         s = suspects[sus]
         if s["exonerated"]:
@@ -632,7 +814,8 @@ def play_game():
         if s["detained"]:
             print("Cuffed and harmless. What are you, a bully?")
             return
-        if locations[current_location].get("suspect") != sus:
+        loc_suspects = locations[current_location].get("suspects", [])
+        if sus not in loc_suspects:
             print("Shadowboxing. Very existential. Very pointless.")
             return
         curse = random.choice(s["curses"]) if s["curses"] else ""
@@ -696,7 +879,7 @@ def play_game():
         if resolved:
             sus = resolved
         if sus not in suspects:
-            print(f"'{sus}' doesn't match anyone. Try: Aiden, Blake, Alice, Nyx.")
+            print(f"'{sus}' doesn't match anyone. Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander.")
             return
         if sfx_queue: sfx_queue.put('accuse')
         if sus != RESERVED_KEY_THX1138 and suspects[RESERVED_KEY_THX1138]["detained"]:
@@ -801,27 +984,39 @@ def play_game():
         countenance_used = True
 
         if player_lean == "liberal":
-            sus_key = locations[current_location].get("suspect")
-            if not sus_key or suspects[sus_key]["exonerated"] or trust[sus_key] < 3:
+            sus_keys = locations[current_location].get("suspects", [])
+            valid_sus = None
+            for key in sus_keys:
+                if not suspects[key]["exonerated"] and trust[key] >= 3:
+                    valid_sus = key
+                    break
+            if not valid_sus:
                 print("The required trust isn't there. The moment fades, wasted.")
                 return
             print("You flash a fat stack of credits, multiple denominations, multiple forms of currency, all tied together with a rubber band. You ask, gently, with this new tool of persuasion.")
-            s = suspects[sus_key]
-            for ev in MISLEADING_CLUES.get(sus_key, []):
-                add_evidence(ev)
+            s = suspects[valid_sus]
             print(f"{get_first_name(s['name'])} spills everything they know about another patron. The evidence is bought and paid for, but cash quantity doesn't always mean product quality.")
+            for ev in MISLEADING_CLUES.get(valid_sus, []):
+                add_evidence(ev)
+                dialogue = MISLEADING_DIALOGUE.get(ev, f"'{ev}'")
+                print(f"   {get_first_name(s['name'])} says: {dialogue}")
         elif player_lean == "fascist":
-            sus_key = locations[current_location].get("suspect")
-            if not sus_key:
+            sus_keys = locations[current_location].get("suspects", [])
+            valid_sus = None
+            for key in sus_keys:
+                if not suspects[key]["exonerated"]:
+                    valid_sus = key
+                    break
+            if not valid_sus:
                 print("Nobody here to interrogate. The Countenance fizzles uselessly.")
                 return
-            s = suspects[sus_key]
+            s = suspects[valid_sus]
             if s["exonerated"]:
                 print("They've been exonerated. No point.")
                 return
             print("You flash your badge and strike the federal salute pose. Their visage softens greatly as you threaten to throw them, their family, and anyone they've ever loved into a deep dark mine with no escape, benefits, or unions to speak of.")
-            if sus_key != RESERVED_KEY_THX1138:
-                others = [k for k in suspects if k != sus_key and k != RESERVED_KEY_THX1138]
+            if valid_sus != RESERVED_KEY_THX1138:
+                others = [k for k in suspects if k != valid_sus and k != RESERVED_KEY_THX1138]
                 if random.random() < 0.8:
                     pair = [RESERVED_KEY_THX1138, random.choice(others)]
                 else:
@@ -848,7 +1043,10 @@ def play_game():
             prefixes = {
                 "marcus": ["aiden_alibi", "aiden_footprint"],
                 "napoleon": ["blake_alibi", "blake_witness"],
-                "cleopatra": ["alice_alibi", "alice_witness"]
+                "cleopatra": ["alice_alibi", "alice_witness"],
+                "janitor": ["luka_alibi", "luka_swept"],
+                "cook": ["adeline_timestamps", "adeline_heard"],
+                "patron": ["hemlock_missing", "hemlock_yelling"]
             }
             for clue in prefixes.get(chosen, []):
                 if clue in clues:
@@ -861,7 +1059,7 @@ def play_game():
 
     def show_inventory():
         ev_list = '\n'.join(f' - {e}' for e in sorted(clues)) if clues else "You've got nothing. The void stares back. Don't blink."
-        print(f"Inventory: {', '.join(inventory) if inventory else 'empty pockets'}\nCuffs: {handcuffs}/2\nHP: {player['hp']}/{player['max_hp']}\n\nEvidence ({evidence_collected}/8):\n{ev_list}")
+        print(f"Inventory: {', '.join(inventory) if inventory else 'empty pockets'}\nCuffs: {handcuffs}/3\nHP: {player['hp']}/{player['max_hp']}\n\nEvidence ({evidence_collected}/8):\n{ev_list}")
 
     EASTER_EGG_PHRASE = "Im an existentialist-absurdist-gnostic-agnostic-secular-true path unitarian-marxist-leninist-maoist multi-level marketer."
 
@@ -920,15 +1118,16 @@ Commands (shortcut):
   take <item>           – pocket an item
   talk <suspect>   (t)  – interrogate a patron
   threaten <suspect>(th)– apply pressure (may backfire)
-  detain <suspect> (d)  – apply handcuffs (2 pairs)
+  detain <suspect> (d)  – apply handcuffs (3 pairs)
   fight <suspect>  (f)  – resort to violence
   accuse <suspect> (a)  – point the finger
   inventory        (i)  – check pockets and evidence
   countenance      (c)  – use your one-time political ability
   help             (h/?)– this list
   quit             (q)  – abandon the case
-Rooms: counter, dining, kitchen, office
-Suspects: Aiden Adams, Alice Oliverae, Blake Jughashvili, Nyx Singénero
+Rooms: counter, dining, kitchen, office, bathroom
+Suspects: Aiden Adams, Blake Jughashvili, Alice Oliverae, Nyx Singénero,
+          Elliot Luka, Adeline Malovega, Alexander Hemlock
           (use first name, last name, or full name)
 """)
 
