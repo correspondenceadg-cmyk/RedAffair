@@ -427,13 +427,13 @@ class GameUI(BoxLayout):
         self.output_label = Label(
             text='',
             font_name=font_to_use,
-            font_size='15sp',
+            font_size='13sp',
             color=theme['fg'],
             size_hint=(None, None),
             halign='left',
             valign='top',
-            text_size=(Window.width, None),
-            width=Window.width,
+            text_size=(Window.width - 16, None),
+            width=Window.width - 16,
             height=0
         )
         self.output_label.bind(
@@ -460,7 +460,9 @@ class GameUI(BoxLayout):
 
         self.back_button = Button(
             text='Back to Menu',
-            size_hint=(1, 0.05),
+            font_size='24sp',
+            size_hint=(1, None),
+            height=100,
             background_color=(0.2, 0.2, 0.2, 1),
             color=(1, 1, 1, 1),
             opacity=0,
@@ -476,13 +478,13 @@ class GameUI(BoxLayout):
         Window.bind(on_resize=self._on_window_resize)
 
     def _on_window_resize(self, instance, width, height):
-        self.output_label.text_size = (width, None)
-        self.output_label.width = width
+        self.output_label.text_size = (width - 16, None)
+        self.output_label.width = width - 16
         self.scroll.scroll_x = 0
 
     def _on_texture_size(self, instance, size):
         instance.height = size[1]
-        instance.width = Window.width
+        instance.width = Window.width - 16
         self.scroll.scroll_x = 0
 
     def start_game(self):
@@ -561,7 +563,8 @@ class MenuScreen(Screen):
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
             font_size='30sp',
             color=(1, 0, 0, 1),
-            size_hint=(1, 0.3)
+            size_hint=(1, None),
+            height=100
         )
         layout.add_widget(title)
 
@@ -570,7 +573,8 @@ class MenuScreen(Screen):
             font_size='24sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, 0.2)
+            size_hint=(1, None),
+            height=100
         )
         start_btn.bind(on_press=self.start_game)
         layout.add_widget(start_btn)
@@ -580,7 +584,8 @@ class MenuScreen(Screen):
             font_size='24sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, 0.2)
+            size_hint=(1, None),
+            height=100
         )
         settings_btn.bind(on_press=self.open_settings)
         layout.add_widget(settings_btn)
@@ -590,9 +595,10 @@ class MenuScreen(Screen):
             font_size='24sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, 0.2)
+            size_hint=(1, None),
+            height=100
         )
-        donate_btn.bind(on_press=self.do_donate)
+        donate_btn.bind(on_press=self.open_donate)
         layout.add_widget(donate_btn)
 
         self.add_widget(layout)
@@ -601,14 +607,89 @@ class MenuScreen(Screen):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
 
+    def on_enter(self):
+        app = App.get_running_app()
+        if not app.music_started:
+            app.load_music()
+            app.music_started = True
+
     def start_game(self, instance):
         self.manager.current = 'game'
 
     def open_settings(self, instance):
         self.manager.current = 'settings'
 
-    def do_donate(self, instance):
-        webbrowser.open('https://www.paypal.com/donate?hosted_button_id=EXAMPLE')
+    def open_donate(self, instance):
+        self.manager.current = 'donate'
+
+
+# ---------- Donate Screen ----------
+class DonateScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        layout = BoxLayout(orientation='vertical', padding=50, spacing=30)
+        with self.canvas.before:
+            Color(0, 0, 0, 1)
+            self.bg_rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_bg, pos=self._update_bg)
+
+        label = Label(
+            text='Support Red Affair',
+            font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
+            font_size='28sp',
+            color=(1, 0, 0, 1),
+            size_hint=(1, None),
+            height=80
+        )
+        layout.add_widget(label)
+
+        paypal_btn = Button(
+            text='Donate via PayPal',
+            font_size='24sp',
+            background_color=(0.2, 0, 0, 1),
+            color=(1, 1, 1, 1),
+            size_hint=(1, None),
+            height=100
+        )
+        paypal_btn.bind(on_press=self.do_paypal)
+        layout.add_widget(paypal_btn)
+
+        cashapp_btn = Button(
+            text='Donate via CashApp',
+            font_size='24sp',
+            background_color=(0.2, 0, 0, 1),
+            color=(1, 1, 1, 1),
+            size_hint=(1, None),
+            height=100
+        )
+        cashapp_btn.bind(on_press=self.do_cashapp)
+        layout.add_widget(cashapp_btn)
+
+        back_btn = Button(
+            text='Back',
+            font_size='24sp',
+            background_color=(0.2, 0, 0, 1),
+            color=(1, 1, 1, 1),
+            size_hint=(1, None),
+            height=100
+        )
+        back_btn.bind(on_press=self.go_back)
+        layout.add_widget(back_btn)
+
+        self.add_widget(layout)
+
+    def _update_bg(self, instance, value):
+        self.bg_rect.size = instance.size
+        self.bg_rect.pos = instance.pos
+
+    def do_paypal(self, instance):
+        webbrowser.open('https://www.paypal.me/panytierra')
+
+    def do_cashapp(self, instance):
+        webbrowser.open('https://cash.app/$commiesimplord')
+
+    def go_back(self, instance):
+        self.manager.current = 'menu'
 
 
 # ---------- Settings Screen ----------
@@ -616,7 +697,7 @@ class SettingsScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.scroll = ScrollView(size_hint=(1, 1), do_scroll_x=False)
-        self.layout = BoxLayout(orientation='vertical', padding=50, spacing=40, size_hint_y=None)
+        self.layout = BoxLayout(orientation='vertical', padding=50, spacing=30, size_hint_y=None)
         self.layout.bind(minimum_height=self.layout.setter('height'))
 
         with self.canvas.before:
@@ -642,7 +723,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=132
+            height=100
         )
         self.theme_toggle.bind(on_press=self.toggle_theme)
         self.layout.add_widget(self.theme_toggle)
@@ -655,7 +736,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=132
+            height=100
         )
         self.dynamic_lighting_toggle.bind(on_press=self.toggle_dynamic_lighting)
         self.layout.add_widget(self.dynamic_lighting_toggle)
@@ -668,7 +749,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=132
+            height=100
         )
         self.dynamic_sound_toggle.bind(on_press=self.toggle_dynamic_sound)
         self.layout.add_widget(self.dynamic_sound_toggle)
@@ -681,7 +762,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=132
+            height=100
         )
         self.music_toggle.bind(on_press=self.toggle_music)
         self.layout.add_widget(self.music_toggle)
@@ -736,7 +817,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=132
+            height=100
         )
         self.next_track_btn.bind(on_press=self.next_track)
         self.layout.add_widget(self.next_track_btn)
@@ -748,7 +829,7 @@ class SettingsScreen(Screen):
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=132
+            height=100
         )
         back_btn.bind(on_press=self.go_back)
         self.layout.add_widget(back_btn)
@@ -877,6 +958,7 @@ class RootWidget(FloatLayout):
         self.sm = ScreenManager(transition=FadeTransition(duration=0.5))
         self.sm.add_widget(SplashScreen(name='splash'))
         self.sm.add_widget(MenuScreen(name='menu'))
+        self.sm.add_widget(DonateScreen(name='donate'))
         self.sm.add_widget(GameScreen(name='game'))
         self.sm.add_widget(SettingsScreen(name='settings'))
         self.sm.current = 'splash'
@@ -905,7 +987,7 @@ class RedAffairApp(App):
         'audio/track1.ogg': ('Blue Eyes', 'Dotdropper'),
         'audio/track2.ogg': ('What A Shame', 'Dotdropper'),
         'audio/track3.ogg': ('Track 3', 'Composer 3'),
-        'audio/track4.ogg': ('Lotus Eater Anthem', 'Dotdropler'),
+        'audio/track4.ogg': ('Track 4', 'Composer 4'),
     }
     music_index = 0
     music_volume = 0.3
