@@ -468,7 +468,82 @@ def play_game():
         "cleaver_analysis": "Scanner shows the blood is synth-crab juice, not human.",
     }
 
-    # -- Human-readable notepad names --
+    # -- Evidence implication/exoneration labels --
+    EVIDENCE_IMPLICATION = {
+        "aiden_alibi": (["Unknown"], ["Aiden"]),
+        "luka_alibi": (["Unknown"], ["Elliot"]),
+        "blake_alibi": (["Unknown"], ["Blake"]),
+        "hemlock_missing": (["Unknown"], ["Alexander"]),
+        "alice_alibi": (["Unknown"], ["Alice"]),
+        "adeline_timestamps": (["Unknown"], ["Adeline"]),
+        "adeline_alibi_confirmed": (["Unknown"], ["Adeline"]),
+        "nyx_message": (["Nyx"], []),
+        "unknown_revolver": (["Nyx", "Unknown"], []),
+        "aiden_footprint": (["Unknown"], ["Aiden"]),
+        "blake_witness": (["Nyx"], []),
+        "alice_witness": (["Nyx"], []),
+        "luka_swept": (["Nyx"], []),
+        "adeline_heard": (["Nyx"], []),
+        "hemlock_yelling": (["Nyx"], []),
+        "cook_landlord": (["Adeline"], []),
+        "marcus_gossip_cleopatra": (["Alice"], []),
+        "napoleon_gossip_marcus": (["Aiden"], []),
+        "cleopatra_gossip_napoleon": (["Blake"], []),
+        "janitor_gossip_cook": (["Adeline"], []),
+        "cook_gossip_janitor": (["Elliot"], []),
+        "patron_gossip_thatcher": (["Nyx"], []),
+        "nyx_gossip_patron": (["Alexander"], []),
+        "aiden_says_alice_promoted": (["Alice"], []),
+        "aiden_says_alice_paycheck": (["Alice"], []),
+        "aiden_says_victim_angry": (["Unknown"], []),
+        "alice_blake_screenshots": (["Blake"], []),
+        "alice_victim_msg_afraid": (["Unknown"], []),
+        "alice_victim_cant_stay_home": (["Unknown"], []),
+        "blake_nyx_bully": (["Nyx"], []),
+        "blake_nyx_called_out": (["Nyx"], []),
+        "blake_victim_distant": (["Unknown"], []),
+        "nyx_aiden_resented": (["Aiden"], []),
+        "nyx_alice_promoted_over_victim": (["Alice"], []),
+        "nyx_victim_didnt_want_return": (["Unknown"], []),
+        "luka_says_cook_threatened": (["Adeline"], []),
+        "luka_says_patron_was_outside": (["Alexander"], []),
+        "luka_says_ring_was_planted": (["Elliot"], []),
+        "adeline_says_janitor_stole_ring": (["Elliot"], []),
+        "adeline_says_alice_argued": (["Alice"], []),
+        "adeline_says_victim_was_armed": (["Unknown"], []),
+        "hemlock_says_blake_threatened": (["Blake"], []),
+        "hemlock_says_airlock_heard": (["Unknown"], []),
+        "hemlock_says_nyx_was_calm": (["Nyx"], []),
+        "bullet_casing": (["Nyx"], []),
+        "datachip": (["Nyx"], []),
+        "bloody_cleaver": (["Unknown"], []),
+        "cleaver_analysis": (["Unknown"], []),
+    }
+
+    # -- Evidence aliases for human-readable and shorthand names --
+    EVIDENCE_ALIASES = {
+        "payphone log": "aiden_alibi", "phone log": "aiden_alibi", "log": "aiden_alibi", "payphone": "aiden_alibi", "p log": "aiden_alibi",
+        "wet floor sign": "luka_alibi", "floor sign": "luka_alibi", "sheen": "luka_alibi", "wet floor": "luka_alibi",
+        "time-stamped napkin": "blake_alibi", "napkin": "blake_alibi", "blake's napkin": "blake_alibi",
+        "coffee receipt": "hemlock_missing", "receipt": "hemlock_missing", "old receipt": "hemlock_missing",
+        "bus ticket stub": "alice_alibi", "ticket stub": "alice_alibi", "bus ticket": "alice_alibi", "ticket": "alice_alibi", "bus stub": "alice_alibi", "b ticket": "alice_alibi", "bts": "alice_alibi",
+        "stock bucket": "adeline_timestamps", "order docket": "adeline_timestamps", "docket": "adeline_timestamps",
+        "adeline's alibi confirmed": "adeline_alibi_confirmed", "freezer log": "adeline_alibi_confirmed",
+        "torn paper": "nyx_message", "nyx's letter": "nyx_message", "letter": "nyx_message",
+        "revolver": "unknown_revolver", "gun": "unknown_revolver", "weapon": "unknown_revolver",
+        "footprint": "aiden_footprint", "tracks": "aiden_footprint", "outside tracks": "aiden_footprint",
+        "strong posture witness": "blake_witness", "posture witness": "blake_witness",
+        "argument witness": "alice_witness", "argument": "alice_witness",
+        "determined stride": "luka_swept", "stride": "luka_swept",
+        "adeline heard": "adeline_heard", "woman's voice": "adeline_heard",
+        "hemlock yelling": "hemlock_yelling", "yelling": "hemlock_yelling",
+        "landlord motive": "cook_landlord", "landlord": "cook_landlord",
+        "bullet casing": "bullet_casing", "casing": "bullet_casing",
+        "datachip": "datachip", "chip": "datachip",
+        "bloody cleaver": "bloody_cleaver", "cleaver": "bloody_cleaver",
+        "cleaver analysis": "cleaver_analysis",
+    }
+
     def evidence_display_name(clue_id):
         return EVIDENCE_DESCRIPTIONS.get(clue_id, clue_id).split('.')[0].strip()
 
@@ -693,11 +768,21 @@ def play_game():
 
     def examine(item):
         nonlocal body_examined, bathroom_panel_revealed
+        # Check for scanner/database usage
+        if item.startswith("with scanner "):
+            examine_scanner(item)
+            return
+        if item.startswith("with database "):
+            examine_database(item)
+            return
+        # Special items
         if item == "scanner":
             print("The portable forensic scanner. It can verify physical evidence with a beam of light and a lot of attitude.")
-        elif item == "database":
+            return
+        if item == "database":
             print("A handheld galactic database. Cross-references testimony, flags inconsistencies. When it works.")
-        elif item == "body" and current_location == "bathroom":
+            return
+        if item == "body" and current_location == "bathroom":
             if not body_examined:
                 body_examined = True
                 print("The victim appears to be between the ages of 25 and 30. Feminine. Clothes are in tact, the wallet is in hand. From the look of it, it doesn't seem it ever left her fist. She's approximately 5 feet tall. Her makeup is done, smeared only from the blood. For a brief moment, you wonder what foundation she used. You've only ever heard of makeup smudging in old films.\n\nThe victim's face: mild surprise. Death wasn't so much terrifying as much as it was rude. Between the eyes is a bullet wound: neat, centered, professional even. Someone knew what they were doing.")
@@ -706,37 +791,52 @@ def play_game():
                 if not bathroom_panel_revealed and trust["janitor"] >= 3:
                     bathroom_panel_revealed = True
                     print("You notice something new: a loose panel behind the toilet. The janitor must have mentioned it.")
-        elif item == "corkboard" and current_location == "kitchen":
+            return
+        if item == "corkboard" and current_location == "kitchen":
             print("The corkboard is a collage of fading schedules, a yellowed menu, and a crisp flier for 'Reyes Properties'. The same name as on the victim's ID, if you've seen it.")
             if "galactic_id" in inventory or "signet ring" in inventory:
                 print("The connection clicks: the victim owned the complex where Adeline lives.")
-        elif item == "freezer" and current_location == "kitchen":
+            return
+        if item == "freezer" and current_location == "kitchen":
             if freezer_unlocked:
                 print("The walk-in freezer hums softly. You can now enter it properly. Try 'go freezer'.")
             else:
                 print("The walk-in freezer door is locked. You'd need a reason to open it.")
-        elif item in ["signet ring", "galactic_id"] and item in locations[current_location]["items"]:
+            return
+        if item in ["signet ring", "galactic_id"] and item in locations[current_location]["items"]:
             if item == "signet ring":
                 print("A heavy silver ring, engraved with the initials E.R. It feels cold and important.")
             else:
                 print("The ID reads 'E. Reyes' with a photo of the victim. The address lists a building complex owned by a shell company.")
             inventory.append(item)
             locations[current_location]["items"].remove(item)
-        elif item == "poison vial" and item in locations[current_location]["items"]:
+            return
+        if item == "poison vial" and item in locations[current_location]["items"]:
             print("A small vial of clear liquid. It smells faintly of almonds. Cyanide, maybe. Or just bad coffee syrup.")
             inventory.append(item)
             locations[current_location]["items"].remove(item)
-        elif item == "notepad":
+            return
+        # Evidence alias resolution
+        ev_id = EVIDENCE_ALIASES.get(item.lower())
+        if ev_id is None:
+            # direct check in EVIDENCE_DESCRIPTIONS keys
+            if item in EVIDENCE_DESCRIPTIONS:
+                ev_id = item
+        if ev_id:
+            desc = EVIDENCE_DESCRIPTIONS.get(ev_id, "No description.")
+            impl, exon = EVIDENCE_IMPLICATION.get(ev_id, (["Unknown"], []))
+            impl_str = ", ".join(impl) if impl else "None"
+            exon_str = ", ".join(exon) if exon else "None"
+            print(f"{desc}\nImplicates: {impl_str}\nExonerates: {exon_str}")
+            if ev_id not in clues and ev_id in EVIDENCE_DESCRIPTIONS:
+                # only add if it's something you'd find? Actually we don't auto-add; evidence is added via search/talk.
+                pass
+            return
+        # Notepad
+        if item == "notepad":
             show_notepad()
-        elif item.startswith("with scanner "):
-            examine_scanner(item)
-        elif item.startswith("with database "):
-            examine_database(item)
-        elif item in EVIDENCE_DESCRIPTIONS:
-            desc = EVIDENCE_DESCRIPTIONS[item]
-            print(f"{desc}")
-        else:
-            print(f"You give the {item} a good look over. It's definitely a {item}. What were you expecting?")
+            return
+        print(f"You give the {item} a good look over. It's definitely a {item}. What were you expecting?")
 
     def show_notepad():
         if not clues:
@@ -745,10 +845,13 @@ def play_game():
             print("─── NOTEPAD ───")
             for c in sorted(clues):
                 name = evidence_display_name(c)
+                impl, exon = EVIDENCE_IMPLICATION.get(c, (["Unknown"], []))
+                impl_str = ", ".join(impl) if impl else "None"
+                exon_str = ", ".join(exon) if exon else "None"
+                line = f"  • {name}  [Implicates: {impl_str}; Exonerates: {exon_str}]"
                 if is_misleading(c):
-                    print(f"  {GRAY}• {name} (suspicious){RESET}")
-                else:
-                    print(f"  • {name}")
+                    line = f"  {GRAY}• {name} (suspicious)  [Implicates: {impl_str}; Exonerates: {exon_str}]{RESET}"
+                print(line)
             print("───────────────")
 
     def take(item):
@@ -1101,22 +1204,36 @@ def play_game():
         if all(suspects[k]["defeated"] for k in suspects):
             ending_carnage()
 
+    def plant_evidence(item, sus):
+        nonlocal corruption_planted
+        if not item:
+            item = "revolver"
+        if item == "revolver" and "revolver" not in inventory:
+            print("You don't have the revolver.")
+            return
+        if item != "revolver":
+            print("You can only plant the revolver at this time.")
+            return
+        resolved = resolve_suspect(sus)
+        if not resolved:
+            print("Invalid suspect.")
+            return
+        inventory.remove("revolver")
+        corruption_planted = resolved
+        print(f"You plant the revolver on {get_first_name(suspects[resolved]['name'])}. The frame is set.")
+
     def accuse(sus):
         nonlocal handcuffs, corruption_planted
         if not sus:
             print("Accuse who? Make up your mind, detective.")
             return
-        if sus.startswith("plant revolver on "):
-            target_name = sus[18:].strip()
-            resolved = resolve_suspect(target_name)
-            if resolved and "revolver" in inventory:
-                corruption_planted = resolved
-                inventory.remove("revolver")
-                print(f"You plant the revolver on {get_first_name(suspects[resolved]['name'])}. The frame is set.")
-                return
-            else:
-                print("That won't work. You need the revolver and a valid suspect.")
-                return
+        # Check for plant command
+        if sus.startswith("plant "):
+            parts = sus[6:].split(" on ")
+            item = parts[0].strip() if len(parts) > 0 else ""
+            target = parts[1].strip() if len(parts) > 1 else ""
+            plant_evidence(item, target)
+            return
         resolved = resolve_suspect(sus)
         if resolved:
             sus = resolved
@@ -1126,13 +1243,10 @@ def play_game():
         if sfx_queue: sfx_queue.put('accuse')
         if sus == "cook" and not suspects["cook"]["exonerated"] and not suspects["cook"]["detained"] and not suspects["cook"]["defeated"]:
             print("Adeline's eyes widen. 'You think it was me? No, no, no...' She bolts for the back door!")
-            if suspects["cook"]["detained"] or suspects["cook"]["defeated"]:
-                pass
-            else:
-                print("She escapes into the void before you can react. The case just got harder.")
-                suspects["cook"]["alive"] = False
-                suspects["cook"]["escaped"] = True
-                return
+            print("She escapes into the void before you can react. The case just got harder.")
+            suspects["cook"]["alive"] = False
+            suspects["cook"]["escaped"] = True
+            return
         if nyx_escaped and corruption_planted and sus == corruption_planted:
             corruption_ending()
             return
@@ -1363,7 +1477,7 @@ def play_game():
         'th': 'threaten', 'd': 'detain', 'f': 'fight', 'a': 'accuse',
         'i': 'inventory', 'inv': 'inventory', 'h': 'help', '?': 'help',
         'q': 'quit', 'x': 'examine', 'c': 'countenance', 'r': 'read',
-        'v': 'theory', 'p': 'plant revolver on'
+        'v': 'theory', 'p': 'plant'
     }
 
     def expand_command(raw):
@@ -1407,8 +1521,8 @@ def play_game():
                 return "read notepad"
             elif shortcut == 'theory':
                 return f"theory {' '.join(parts[1:])}" if len(parts) > 1 else "theory"
-            elif shortcut == 'plant revolver on':
-                return f"plant revolver on {' '.join(parts[1:])}" if len(parts) > 1 else "plant revolver on"
+            elif shortcut == 'plant':
+                return f"plant {' '.join(parts[1:])}" if len(parts) > 1 else "plant"
         return raw
 
     def help_text():
@@ -1424,13 +1538,13 @@ Commands (shortcut):
   detain <suspect> (d)  – apply handcuffs (3 pairs, or unlimited with cheat)
   fight <suspect>  (f)  – resort to violence
   accuse <suspect> (a)  – point the finger
-  plant revolver on <suspect> (p) – frame someone (requires revolver in inventory)
+  plant [item] on <suspect> (p) – plant evidence (default revolver) on a suspect to frame them
   theory <suspect> <motive> (v) – propose a theory, get hints
   inventory        (i)  – check pockets and evidence
   countenance      (c)  – use your political ability (may be unlimited with cheat)
   help             (h/?)– this list
   quit             (q)  – abandon the case
-  read notepad     (r)  – review collected evidence (misleading clues shown gray)
+  read notepad     (r)  – review collected evidence (misleading clues shown gray, with implication/exoneration)
 Rooms: counter, dining, kitchen, office, bathroom, freezer (after unlocking)
 Suspects: Aiden Adams, Blake Jughashvili, Alice Oliverae, Nyx Singénero,
           Elliot Luka, Adeline Malovega, Alexander Hemlock
@@ -1491,7 +1605,7 @@ Suspects: Aiden Adams, Blake Jughashvili, Alice Oliverae, Nyx Singénero,
             motive_theory = parts_theory[1] if len(parts_theory) > 1 else ""
             theory(sus_theory, motive_theory)
         elif verb == "plant":
-            accuse(f"plant revolver on {noun}")
+            accuse(f"plant {noun}")
         else:
             print("Unrecognized command. This must be your first homicide detail. Type 'help' or 'h' for assistance.")
 
