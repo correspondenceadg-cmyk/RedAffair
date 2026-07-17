@@ -1,12 +1,16 @@
 import random, sys, os, textwrap
 
 sfx_queue = None
+cheat_unlimited_cuffs = False
+cheat_god_mode = False
+cheat_infinite_countenance = False
 
 def play_game():
     RED = '\033[31m'
     BLACK_BG = '\033[40m'
     BOLD = '\033[1m'
     RESET = '\033[0m'
+    GRAY = '\033[90m'
 
     TOTAL_NON_MISLEADING = 21 
 
@@ -245,6 +249,13 @@ def play_game():
         RESERVED_KEY_THX1138: None
     }
 
+    # -- Dynamic expansions --
+    freezer_unlocked = False
+    freezer_cleaver_found = False
+    bathroom_panel_revealed = False
+    revolver_found = False
+    bullet_found_in_office = False
+
     locations = {
         "counter": {
             "desc": (
@@ -293,7 +304,8 @@ def play_game():
             "items": ["poison vial", "ring_or_id"],
             "suspects": [RESERVED_KEY_THX1138],
             "searchable": ["nyx_message"],
-            "body_examinable": False
+            "body_examinable": False,
+            "bullet_found": False
         },
         "bathroom": {
             "desc": (
@@ -305,7 +317,15 @@ def play_game():
             "items": [],
             "suspects": [],
             "searchable": [],
-            "body_examinable": True
+            "body_examinable": True,
+            "datachip_found": False
+        },
+        "freezer": {
+            "desc": "FREEZER – A cramped sub-zero storage locker. Frost creeps over plastic crates and a half-empty case of synth-crab.",
+            "items": [],
+            "suspects": [],
+            "searchable": [],
+            "body_examinable": False
         }
     }
 
@@ -314,15 +334,16 @@ def play_game():
     locations["office"]["items"].append(ring_or_id)
 
     current_location = "counter"
-    inventory = ["notepad"]
+    inventory = ["notepad", "scanner", "database"]
     handcuffs = 3
     clues = set()
     body_examined = False
-    revolver_found = False
     game_over = False
     traits_revealed = set()
     trust = {}
     nyx_escape_offered = False
+    nyx_escaped = False
+    corruption_planted = None
     talk_history = {}
     countenance_used = False
     required_incriminating = 3
@@ -403,6 +424,7 @@ def play_game():
         "hemlock_missing": "Old coffee receipt, hours before the murder. Doesn't confirm his whereabouts.",
         "alice_alibi": "Bus ticket stub. Alice arrived just before or after the shot.",
         "adeline_timestamps": "Stock bucket with timestamped order docket. Adeline's alibi.",
+        "adeline_alibi_confirmed": "Adeline's alibi verified by freezer logs. She was in the freezer at time of death.",
         "nyx_message": "Torn paper. Nyx's handwriting. An angry letter to the victim.",
         "unknown_revolver": "A revolver, recently fired. The murder weapon.",
         "aiden_footprint": "Tracks outside the back porthole. Too big to be Aiden's.",
@@ -440,7 +462,21 @@ def play_game():
         "hemlock_says_blake_threatened": "Hemlock says Blake was muttering threats.",
         "hemlock_says_airlock_heard": "Hemlock says he heard the airlock hiss.",
         "hemlock_says_nyx_was_calm": "Hemlock says Nyx was suspiciously calm.",
+        "bullet_casing": "A spent bullet casing found in the office. Matches the revolver calibre.",
+        "datachip": "A datachip from a loose panel in the bathroom. Contains encrypted communications.",
+        "bloody_cleaver": "A bloody cleaver in the freezer. A grisly red herring.",
+        "cleaver_analysis": "Scanner shows the blood is synth-crab juice, not human.",
     }
+
+    # -- Human-readable notepad names --
+    def evidence_display_name(clue_id):
+        return EVIDENCE_DESCRIPTIONS.get(clue_id, clue_id).split('.')[0].strip()
+
+    def is_misleading(clue_id):
+        for v in MISLEADING_CLUES.values():
+            if clue_id in v:
+                return True
+        return False
 
     def hud():
         print(RED + BLACK_BG + "╔══ HUD ═══════════════════════════════════════════╗")
@@ -451,7 +487,7 @@ def play_game():
     def add_evidence(ev_id):
         if ev_id not in clues:
             clues.add(ev_id)
-            print(f"{RED}📋 Evidence: {ev_id} ({len(clues)}/{TOTAL_NON_MISLEADING}){RESET}")
+            print(f"{RED}📋 Evidence: {evidence_display_name(ev_id)} ({len(clues)}/{TOTAL_NON_MISLEADING}){RESET}")
             player["xp"] += 1
             if player["xp"] >= player["xp_to_next"]:
                 level_up()
@@ -459,7 +495,7 @@ def play_game():
     def remove_evidence(ev_id):
         if ev_id in clues:
             clues.remove(ev_id)
-            print(f"{RED}📋 Evidence lost: {ev_id} ({len(clues)}/{TOTAL_NON_MISLEADING}){RESET}")
+            print(f"{RED}📋 Evidence lost: {evidence_display_name(ev_id)} ({len(clues)}/{TOTAL_NON_MISLEADING}){RESET}")
 
     def level_up():
         player["level"] += 1
@@ -506,10 +542,13 @@ def play_game():
         desc = loc["desc"]
         if current_location == "dining" and revolver_found:
             desc += "\nThe napkin dispenser is empty – you already liberated its secret."
-        if current_location == "office" and "nyx_message" in clues:
-            desc += "\nThe torn paper is gone. Its absence feels louder than its presence."
+        if current_location == "office":
+            if bullet_found_in_office:
+                desc += "\nA spent bullet casing glints under the desk."
         if current_location == "bathroom" and body_examined:
             desc += "\nThe body remains, patient as only the dead can be."
+            if bathroom_panel_revealed:
+                desc += "\nA loose panel behind the toilet hints at secrets."
         sus_keys = loc.get("suspects", [])
         for sus_key in sus_keys:
             s = suspects[sus_key]
@@ -526,16 +565,20 @@ def play_game():
 
     def move(direction):
         nonlocal current_location
+        if direction == "freezer":
+            if not freezer_unlocked:
+                print("The freezer door is locked tight. Maybe there's a reason to check in here...")
+                return
         if direction in locations:
             current_location = direction
             clear_screen()
             hud()
             describe_location()
         else:
-            print("Not a room. Try: counter, dining, kitchen, office, bathroom.")
+            print("Not a room. Try: counter, dining, kitchen, office, bathroom, freezer.")
 
     def search():
-        nonlocal revolver_found
+        nonlocal revolver_found, bullet_found_in_office, bathroom_panel_revealed, freezer_unlocked, freezer_cleaver_found
         loc = locations[current_location]
         if current_location == "dining" and loc.get("hidden_revolver") and not revolver_found:
             revolver_found = True
@@ -543,11 +586,27 @@ def play_game():
             print("In Plain View: cold metal made for someone with even colder blood; a revolver. It's definitely recently fired – the barrel still whispers gunpowder to anyone who will pay attention.")
             add_evidence("unknown_revolver")
             return
-        if current_location == "office" and "nyx_message" not in clues:
-            inventory.append("torn thesis")
-            add_evidence("nyx_message")
-            print(f"Torn paper. {suspects[RESERVED_KEY_THX1138]['name']}'s handwriting. Hard to make out what was said here, but by the looks of phrases like \"per my last query\", \"as you can see\", and at least one use of the word asinine in the corner like a watermark where the rip begins at the bottom – this is clearly an angry letter preceded by at least a couple more.")
+        if current_location == "office" and revolver_found and not bullet_found_in_office:
+            bullet_found_in_office = True
+            print("A spent bullet casing, half hidden beneath the desk. It matches the revolver's calibre.")
+            add_evidence("bullet_casing")
             return
+        if current_location == "bathroom" and bathroom_panel_revealed and not locations["bathroom"]["datachip_found"]:
+            locations["bathroom"]["datachip_found"] = True
+            print("You pry open the loose panel. Inside: a datachip, cold and unmarked.")
+            add_evidence("datachip")
+            inventory.append("datachip")
+            return
+        if current_location == "freezer":
+            if not freezer_cleaver_found and "cook_landlord" in talk_history:
+                freezer_cleaver_found = True
+                print("Buried under synth-crab: a cleaver stained with something dark and ominous.")
+                add_evidence("bloody_cleaver")
+                return
+            elif "adeline_timestamps" in clues and "adeline_alibi_confirmed" not in clues:
+                add_evidence("adeline_alibi_confirmed")
+                print("A log sheet on the freezer door confirms Adeline was inside at the time of the murder. Solid alibi.")
+                return
         if current_location == "counter" and "aiden_alibi" not in clues:
             print("Payphone log. Aiden was on a call at time of death. It's hard to be in two places at once, but you've seen stranger things.")
             add_evidence("aiden_alibi")
@@ -577,26 +636,85 @@ def play_game():
             print("A stock bucket with a timestamped order docket. Adeline's alibi checks out, at least on the surface.")
             add_evidence("adeline_timestamps")
             trust_change("cook", 1)
+            nonlocal freezer_unlocked
+            freezer_unlocked = True
+            print("You notice the freezer door is now unlocked. Cold justice awaits.")
+            return
+        if current_location == "office" and "nyx_message" not in clues:
+            inventory.append("torn thesis")
+            add_evidence("nyx_message")
+            print(f"Torn paper. {suspects[RESERVED_KEY_THX1138]['name']}'s handwriting. Hard to make out... clearly an angry letter preceded by at least a couple more.")
             return
         print("Nothing. Nothing worth mentioning anyway, just grease, despair, and the miasma of mystery.")
 
+    # -- Scanner and database --
+    def examine_scanner(target):
+        if target.startswith("with scanner "):
+            obj = target[13:].strip()
+            if obj in inventory or obj in clues or obj in EVIDENCE_DESCRIPTIONS:
+                if obj == "revolver":
+                    print("Scanner confirms: barrel residue matches the bullet casing in the office.")
+                elif obj == "bullet_casing":
+                    print("Scanner: casing matched to the revolver. Fired from the same weapon.")
+                elif obj == "bloody_cleaver":
+                    print("Scanner analysis: the blood is synth-crab juice, not human. This cleaver is a red herring.")
+                    add_evidence("cleaver_analysis")
+                elif obj == "datachip":
+                    print("Scanner: encrypted files. Decryption key missing, but metadata suggests communication with an external contact.")
+                elif obj == "aiden_alibi":
+                    print("Scanner: payphone log verified. Call duration matches timestamp exactly.")
+                elif obj == "blake_alibi":
+                    print("Scanner: ink and paper age consistent with the timeframe. Alibi solidifies.")
+                elif obj == "alice_alibi":
+                    print("Scanner: bus ticket validated. Transit records confirm Alice's arrival time.")
+                elif obj == "adeline_timestamps" or obj == "adeline_alibi_confirmed":
+                    print("Scanner: freezer door logs confirm Adeline's presence. Verified alibi.")
+                elif obj == "nyx_message":
+                    print("Scanner: handwriting analysis confirms Nyx's authorship. Paper matches office stock.")
+                else:
+                    print("Scanner hums, but finds nothing conclusive on that item.")
+            else:
+                print("You don't have that to scan.")
+        else:
+            print("Usage: examine with scanner <object>")
+
+    def examine_database(target):
+        if target.startswith("with database "):
+            obj = target[13:].strip()
+            if obj in clues or obj in EVIDENCE_DESCRIPTIONS:
+                if obj in MISLEADING_DIALOGUE:
+                    print("Database flags this as potentially misleading. Cross-reference with other testimony.")
+                else:
+                    print("Database search returns no contradictory records. Likely credible.")
+            else:
+                print("That's not in your evidence log.")
+        else:
+            print("Usage: examine with database <object>")
+
     def examine(item):
-        nonlocal body_examined
-        if item == "body" and current_location == "bathroom":
+        nonlocal body_examined, bathroom_panel_revealed
+        if item == "scanner":
+            print("The portable forensic scanner. It can verify physical evidence with a beam of light and a lot of attitude.")
+        elif item == "database":
+            print("A handheld galactic database. Cross-references testimony, flags inconsistencies. When it works.")
+        elif item == "body" and current_location == "bathroom":
             if not body_examined:
                 body_examined = True
                 print("The victim appears to be between the ages of 25 and 30. Feminine. Clothes are in tact, the wallet is in hand. From the look of it, it doesn't seem it ever left her fist. She's approximately 5 feet tall. Her makeup is done, smeared only from the blood. For a brief moment, you wonder what foundation she used. You've only ever heard of makeup smudging in old films.\n\nThe victim's face: mild surprise. Death wasn't so much terrifying as much as it was rude. Between the eyes is a bullet wound: neat, centered, professional even. Someone knew what they were doing.")
             else:
                 print("The body remains. It hasn't changed. Corpses rarely do.")
+                if not bathroom_panel_revealed and trust["janitor"] >= 3:
+                    bathroom_panel_revealed = True
+                    print("You notice something new: a loose panel behind the toilet. The janitor must have mentioned it.")
         elif item == "corkboard" and current_location == "kitchen":
             print("The corkboard is a collage of fading schedules, a yellowed menu, and a crisp flier for 'Reyes Properties'. The same name as on the victim's ID, if you've seen it.")
             if "galactic_id" in inventory or "signet ring" in inventory:
                 print("The connection clicks: the victim owned the complex where Adeline lives.")
         elif item == "freezer" and current_location == "kitchen":
-            print("The walk-in freezer hums softly. Stacked inside are bulk ingredients, a half-empty case of synth-crab, and a stock bucket with a timestamped order docket pinned to its lid.")
-            if "adeline_timestamps" not in clues:
-                add_evidence("adeline_timestamps")
-                trust_change("cook", 1)
+            if freezer_unlocked:
+                print("The walk-in freezer hums softly. You can now enter it properly. Try 'go freezer'.")
+            else:
+                print("The walk-in freezer door is locked. You'd need a reason to open it.")
         elif item in ["signet ring", "galactic_id"] and item in locations[current_location]["items"]:
             if item == "signet ring":
                 print("A heavy silver ring, engraved with the initials E.R. It feels cold and important.")
@@ -610,6 +728,10 @@ def play_game():
             locations[current_location]["items"].remove(item)
         elif item == "notepad":
             show_notepad()
+        elif item.startswith("with scanner "):
+            examine_scanner(item)
+        elif item.startswith("with database "):
+            examine_database(item)
         elif item in EVIDENCE_DESCRIPTIONS:
             desc = EVIDENCE_DESCRIPTIONS[item]
             print(f"{desc}")
@@ -622,8 +744,11 @@ def play_game():
         else:
             print("─── NOTEPAD ───")
             for c in sorted(clues):
-                desc = EVIDENCE_DESCRIPTIONS.get(c, "No description available.")
-                print(f"  • {c}: {desc}")
+                name = evidence_display_name(c)
+                if is_misleading(c):
+                    print(f"  {GRAY}• {name} (suspicious){RESET}")
+                else:
+                    print(f"  • {name}")
             print("───────────────")
 
     def take(item):
@@ -637,7 +762,7 @@ def play_game():
             print("It's not here. Maybe it was never here. Maybe nothing is.")
 
     def talk(sus):
-        nonlocal nyx_escape_offered
+        nonlocal nyx_escape_offered, freezer_unlocked
         if not sus:
             print("Who did you want to talk to? Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander (or their last names).")
             return
@@ -674,6 +799,7 @@ def play_game():
             if "cook_landlord" not in talk_history:
                 talk_history["cook_landlord"] = True
                 print(f"{get_first_name(s['name'])} suddenly blurts out: 'The victim... she was my landlord. Always hounding me for rent. Can you believe it?'")
+                freezer_unlocked = True
 
         if sus == RESERVED_KEY_THX1138 and trust[sus] == 3 and not nyx_escape_offered:
             nyx_escape_offered = True
@@ -779,8 +905,8 @@ def play_game():
                 if sus == RESERVED_KEY_THX1138:
                     print(f"They snatch it back before you can put it away. '{curse}!'")
                     trust_change(sus, -1)
-                    if "nyx_message" in inventory:
-                        inventory.remove("nyx_message")
+                    if "torn thesis" in inventory:
+                        inventory.remove("torn thesis")
             elif topic == "the revolver":
                 if sus == RESERVED_KEY_THX1138:
                     print(f"For a moment, but just a moment, something flickers; their face an old neon sign on its last leg that hardly says anything completely. 'Never seen it before, detective.' The lie is obvious, but not why.")
@@ -865,7 +991,7 @@ def play_game():
 
     def detain(sus):
         nonlocal handcuffs
-        if handcuffs <= 0:
+        if not cheat_unlimited_cuffs and handcuffs <= 0:
             print("You reach for your cuffs and find no more.")
             return
         if not sus:
@@ -888,9 +1014,11 @@ def play_game():
         if sus not in loc_suspects:
             print("They're not in here and ain't telekinetic. Not yet, anyway.")
             return
-        handcuffs -= 1
+        if not cheat_unlimited_cuffs:
+            handcuffs -= 1
         s["detained"] = True
-        print(f"Click-click-click-click. {get_first_name(s['name'])} now sports a used set of state-issued jewelry. {handcuffs} remaining.")
+        remaining = "∞" if cheat_unlimited_cuffs else handcuffs
+        print(f"Click-click-click-click. {get_first_name(s['name'])} now sports a used set of state-issued jewelry. {remaining} remaining.")
         if sfx_queue: sfx_queue.put('cuffs')
 
     def fight(sus):
@@ -921,6 +1049,8 @@ def play_game():
         print(f"\n{RED}⚔ The air is electric. You and {get_first_name(s['name'])} circle the area like binary stars on a collision course. There may yet be another murder. At least it'll be easy to solve.{RESET}")
         if sfx_queue: sfx_queue.put('fight')
         while player["hp"] > 0 and s["hp"] > 0:
+            if cheat_god_mode:
+                player["hp"] = player["max_hp"]
             print(f"\nYour HP: {player['hp']}/{player['max_hp']} | {get_first_name(s['name'])} HP: {s['hp']}")
             print("1. Calculated strike  2. Desperate swing  3. Tactical retreat")
             act = input("> ").strip()
@@ -957,6 +1087,8 @@ def play_game():
                 check_total_carnage()
                 return
             edmg = random.randint(3, 6)
+            if cheat_god_mode:
+                edmg = 0
             player["hp"] -= edmg
             print(f"{get_first_name(s['name'])} strikes back. {edmg} damage. You see murder in their eyes.")
             if player["hp"] <= 0:
@@ -970,10 +1102,21 @@ def play_game():
             ending_carnage()
 
     def accuse(sus):
-        nonlocal handcuffs
+        nonlocal handcuffs, corruption_planted
         if not sus:
             print("Accuse who? Make up your mind, detective.")
             return
+        if sus.startswith("plant revolver on "):
+            target_name = sus[18:].strip()
+            resolved = resolve_suspect(target_name)
+            if resolved and "revolver" in inventory:
+                corruption_planted = resolved
+                inventory.remove("revolver")
+                print(f"You plant the revolver on {get_first_name(suspects[resolved]['name'])}. The frame is set.")
+                return
+            else:
+                print("That won't work. You need the revolver and a valid suspect.")
+                return
         resolved = resolve_suspect(sus)
         if resolved:
             sus = resolved
@@ -981,29 +1124,40 @@ def play_game():
             print(f"'{sus}' doesn't match anyone. Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander.")
             return
         if sfx_queue: sfx_queue.put('accuse')
+        if sus == "cook" and not suspects["cook"]["exonerated"] and not suspects["cook"]["detained"] and not suspects["cook"]["defeated"]:
+            print("Adeline's eyes widen. 'You think it was me? No, no, no...' She bolts for the back door!")
+            if suspects["cook"]["detained"] or suspects["cook"]["defeated"]:
+                pass
+            else:
+                print("She escapes into the void before you can react. The case just got harder.")
+                suspects["cook"]["alive"] = False
+                suspects["cook"]["escaped"] = True
+                return
+        if nyx_escaped and corruption_planted and sus == corruption_planted:
+            corruption_ending()
+            return
         if sus != RESERVED_KEY_THX1138 and suspects[RESERVED_KEY_THX1138]["detained"]:
             secret_ending()
             return
         if sus != RESERVED_KEY_THX1138:
             ending_fail()
             return
-
         if len(clues.intersection(incriminating)) < required_incriminating:
             print(f"{get_first_name(suspects[RESERVED_KEY_THX1138]['name'])} smirks. 'Let's say I did. Who in Existence would believe you? You've got nothing on me.'")
             return
-
         if suspects[RESERVED_KEY_THX1138]["detained"]:
             ending_correct()
             return
-
         print(f"\nYou point at {get_first_name(suspects[RESERVED_KEY_THX1138]['name'])}. 'You.' The word hangs like a bullet; slipping behind their eyes and through their mental folds as the realization dawns on them. You're pointing at them, and you're not backing down.")
         print(f"You both notice at the same time: they're unrestrained. '{player_name}, you absolute fool!' They lunge.")
         fight(RESERVED_KEY_THX1138)
         if suspects[RESERVED_KEY_THX1138]["defeated"] and not suspects[RESERVED_KEY_THX1138]["detained"]:
-            if handcuffs > 0:
-                handcuffs -= 1
+            if cheat_unlimited_cuffs or handcuffs > 0:
+                if not cheat_unlimited_cuffs:
+                    handcuffs -= 1
                 suspects[RESERVED_KEY_THX1138]["detained"] = True
-                print(f"You slap the cuffs on {get_first_name(suspects[RESERVED_KEY_THX1138]['name'])}. {handcuffs} remaining. Justice never tasted so bloody and sweet. Good job, detective. They're sure to tell stories of this one at the station.")
+                rem = "∞" if cheat_unlimited_cuffs else handcuffs
+                print(f"You slap the cuffs on {get_first_name(suspects[RESERVED_KEY_THX1138]['name'])}. {rem} remaining. Justice never tasted so bloody and sweet. Good job, detective. They're sure to tell stories of this one at the station.")
             else:
                 print("You don't have any cuffs left, but they're out cold. The police drone will handle it. Probably. You light a smoke and watch over them making sure they're still breathing ready to issue another state-sanctioned beat-down if necessary.")
             ending_correct()
@@ -1026,9 +1180,20 @@ def play_game():
         sys.exit(0)
 
     def nyx_escape_ending():
+        nonlocal nyx_escaped
+        print("Nyx parts their lips once more to reveal their toxic solvent-based smile. Their eyes flash the recognition that's only ever shared between two predators in league with each other. You immediately begin to consider how you'll spin this to the police drone. But perhaps there's another way...")
+        nyx_escaped = True
+        suspects[RESERVED_KEY_THX1138]["alive"] = False
+        suspects[RESERVED_KEY_THX1138]["exonerated"] = False
+        print("Nyx vanishes through the back office. The airlock cycles. You're alone with the mess and a choice.")
+        print("You can plant the revolver on someone and accuse them to close the case. Dirty, but effective.")
+
+    def corruption_ending():
         nonlocal game_over
         if sfx_queue: sfx_queue.put('gameover')
-        print("Nyx parts their lips once more to reveal their toxic solvent-based smile. Their eyes flash the recognition that's only ever shared between two predators in league with each other. You immediately begin to consider how you'll spin this to the police drone. You scratch your notepad with fervor and get to work destroying the evidence. Why you did this, only you'll ever know, and let's hope it doesn't haunt you any longer than it takes to finish a bottle of absinthe. Few things ever do.\n\nGAME OVER")
+        print(f"You plant the revolver and make your accusation. The frame holds. The police drone accepts your report without question.")
+        print("A dirty cop ending. Justice is served cold, and you're the one holding the freezer door open.")
+        print(f"{RED}GAME OVER – CORRUPTION ENDING{RESET}")
         game_over = True
         sys.exit(0)
 
@@ -1077,7 +1242,7 @@ def play_game():
 
     def countenance():
         nonlocal countenance_used, handcuffs, required_incriminating
-        if countenance_used:
+        if not cheat_infinite_countenance and countenance_used:
             print("You've already called upon your Countenance. The moment has passed.")
             return
         countenance_used = True
@@ -1155,10 +1320,41 @@ def play_game():
                         print(f"(Required incriminating evidence now {required_incriminating})")
         else:
             print("Your Countenance manifests in an unexpected way. Nothing happens.")
+        if cheat_infinite_countenance:
+            countenance_used = False
 
     def show_inventory():
-        ev_list = '\n'.join(f' - {e}' for e in sorted(clues)) if clues else "You've got nothing. The void stares back. Don't blink."
+        ev_list = '\n'.join(f' - {evidence_display_name(e)}' for e in sorted(clues)) if clues else "You've got nothing. The void stares back. Don't blink."
         print(f"Inventory: {', '.join(inventory) if inventory else 'empty pockets'}\nCuffs: {handcuffs}/3\nHP: {player['hp']}/{player['max_hp']}\n\nEvidence ({len(clues)}/{TOTAL_NON_MISLEADING}):\n{ev_list}")
+
+    # -- Theory command --
+    def theory(sus, motive):
+        resolved = resolve_suspect(sus)
+        if resolved:
+            sus = resolved
+        if sus not in suspects:
+            print("Unknown suspect for theory.")
+            return
+        print(f"Theory: {get_first_name(suspects[sus]['name'])} with motive '{motive}'.")
+        alibi_map = {
+            "marcus": "aiden_alibi",
+            "napoleon": "blake_alibi",
+            "cleopatra": "alice_alibi",
+            "janitor": "luka_alibi",
+            "cook": "adeline_timestamps",
+            "patron": "hemlock_missing",
+            RESERVED_KEY_THX1138: None
+        }
+        if alibi_map[sus] and alibi_map[sus] in clues and not is_misleading(alibi_map[sus]):
+            print("Their alibi seems solid. Unlikely to be the killer.")
+        else:
+            print("Alibi is questionable or absent.")
+        if sus in MISLEADING_CLUES:
+            misleading_found = [c for c in clues if c in MISLEADING_CLUES[sus]]
+            if misleading_found:
+                print(f"Warning: some evidence against {get_first_name(suspects[sus]['name'])} may be misleading.")
+        if check_traits():
+            print("Trait analysis suggests the killer matches the collected witness descriptions.")
 
     EASTER_EGG_PHRASE = "Im an existentialist-absurdist-gnostic-agnostic-secular-true path unitarian-marxist-leninist-maoist multi-level marketer."
 
@@ -1166,7 +1362,8 @@ def play_game():
         'g': 'go', 'l': 'look', 's': 'search', 'e': 'examine', 't': 'talk',
         'th': 'threaten', 'd': 'detain', 'f': 'fight', 'a': 'accuse',
         'i': 'inventory', 'inv': 'inventory', 'h': 'help', '?': 'help',
-        'q': 'quit', 'x': 'examine', 'c': 'countenance', 'r': 'read'
+        'q': 'quit', 'x': 'examine', 'c': 'countenance', 'r': 'read',
+        'v': 'theory', 'p': 'plant revolver on'
     }
 
     def expand_command(raw):
@@ -1179,55 +1376,62 @@ def play_game():
         parts = raw.split()
         first = parts[0].lower()
         if first in shortcuts:
-            if first in ('g', 'go'):
+            shortcut = shortcuts[first]
+            if shortcut == 'go':
                 return f"go {' '.join(parts[1:])}" if len(parts) > 1 else "go"
-            elif first in ('t', 'talk'):
+            elif shortcut == 'talk':
                 return f"talk {' '.join(parts[1:])}" if len(parts) > 1 else "talk"
-            elif first in ('th', 'threaten'):
+            elif shortcut == 'threaten':
                 return f"threaten {' '.join(parts[1:])}" if len(parts) > 1 else "threaten"
-            elif first in ('d', 'detain'):
+            elif shortcut == 'detain':
                 return f"detain {' '.join(parts[1:])}" if len(parts) > 1 else "detain"
-            elif first in ('f', 'fight'):
+            elif shortcut == 'fight':
                 return f"fight {' '.join(parts[1:])}" if len(parts) > 1 else "fight"
-            elif first in ('a', 'accuse'):
+            elif shortcut == 'accuse':
                 return f"accuse {' '.join(parts[1:])}" if len(parts) > 1 else "accuse"
-            elif first in ('e', 'x', 'examine'):
+            elif shortcut == 'examine':
                 return f"examine {' '.join(parts[1:])}" if len(parts) > 1 else "examine"
-            elif first in ('l', 'look'):
+            elif shortcut == 'look':
                 return "look"
-            elif first in ('s', 'search'):
+            elif shortcut == 'search':
                 return "search"
-            elif first in ('i', 'inv', 'inventory'):
+            elif shortcut == 'inventory':
                 return "inventory"
-            elif first in ('h', '?'):
+            elif shortcut == 'help':
                 return "help"
-            elif first == 'q':
+            elif shortcut == 'quit':
                 return "quit"
-            elif first == 'c':
+            elif shortcut == 'countenance':
                 return "countenance"
-            elif first == 'r':
+            elif shortcut == 'read':
                 return "read notepad"
+            elif shortcut == 'theory':
+                return f"theory {' '.join(parts[1:])}" if len(parts) > 1 else "theory"
+            elif shortcut == 'plant revolver on':
+                return f"plant revolver on {' '.join(parts[1:])}" if len(parts) > 1 else "plant revolver on"
         return raw
 
     def help_text():
         print("""
 Commands (shortcut):
-  go <place>       (g)  – move between rooms
+  go <place>       (g)  – move between rooms (includes freezer if unlocked)
   look             (l)  – survey current location
   search           (s)  – rummage for hidden clues
-  examine <obj>    (e/x)– inspect something closely
+  examine <obj>    (e/x)– inspect something closely (use 'examine with scanner/database <obj>' for forensic tools)
   take <item>           – pocket an item
   talk <suspect>   (t)  – interrogate a patron
   threaten <suspect>(th)– apply pressure (may backfire)
-  detain <suspect> (d)  – apply handcuffs (3 pairs)
+  detain <suspect> (d)  – apply handcuffs (3 pairs, or unlimited with cheat)
   fight <suspect>  (f)  – resort to violence
   accuse <suspect> (a)  – point the finger
+  plant revolver on <suspect> (p) – frame someone (requires revolver in inventory)
+  theory <suspect> <motive> (v) – propose a theory, get hints
   inventory        (i)  – check pockets and evidence
-  countenance      (c)  – use your one-time political ability
+  countenance      (c)  – use your political ability (may be unlimited with cheat)
   help             (h/?)– this list
   quit             (q)  – abandon the case
-  read notepad     (r)  – review collected evidence
-Rooms: counter, dining, kitchen, office, bathroom
+  read notepad     (r)  – review collected evidence (misleading clues shown gray)
+Rooms: counter, dining, kitchen, office, bathroom, freezer (after unlocking)
 Suspects: Aiden Adams, Blake Jughashvili, Alice Oliverae, Nyx Singénero,
           Elliot Luka, Adeline Malovega, Alexander Hemlock
           (use first name, last name, or full name)
@@ -1281,6 +1485,13 @@ Suspects: Aiden Adams, Blake Jughashvili, Alice Oliverae, Nyx Singénero,
             sys.exit(0)
         elif verb == "read":
             show_notepad()
+        elif verb == "theory":
+            parts_theory = noun.split(None, 1)
+            sus_theory = parts_theory[0] if parts_theory else ""
+            motive_theory = parts_theory[1] if len(parts_theory) > 1 else ""
+            theory(sus_theory, motive_theory)
+        elif verb == "plant":
+            accuse(f"plant revolver on {noun}")
         else:
             print("Unrecognized command. This must be your first homicide detail. Type 'help' or 'h' for assistance.")
 
