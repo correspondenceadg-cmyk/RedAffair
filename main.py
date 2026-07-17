@@ -562,43 +562,39 @@ class MenuScreen(Screen):
         self.title_label = Label(
             text='RED AFFAIR',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
-            font_size='30sp',
+            font_size='36sp',
             color=(1, 0, 0, 1),
-            size_hint=(1, None),
-            height=100
+            size_hint=(1, 0.35)
         )
         layout.add_widget(self.title_label)
         self.title_taps = 0
 
         start_btn = Button(
             text='Start Game',
-            font_size='28sp',
+            font_size='30sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, None),
-            height=120
+            size_hint=(1, 1)
         )
         start_btn.bind(on_press=self.start_game)
         layout.add_widget(start_btn)
 
         settings_btn = Button(
             text='Settings',
-            font_size='28sp',
+            font_size='30sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, None),
-            height=120
+            size_hint=(1, 1)
         )
         settings_btn.bind(on_press=self.open_settings)
         layout.add_widget(settings_btn)
 
         about_btn = Button(
             text='About',
-            font_size='28sp',
+            font_size='30sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
-            size_hint=(1, None),
-            height=120
+            size_hint=(1, 1)
         )
         about_btn.bind(on_press=self.open_about)
         layout.add_widget(about_btn)
@@ -642,27 +638,27 @@ class AboutScreen(Screen):
             self.bg_rect = Rectangle(size=self.size, pos=self.pos)
         self.bind(size=self._update_bg, pos=self._update_bg)
 
-        btn_game = Button(text='Game Information', font_size='24sp', size_hint=(1, None), height=100)
+        btn_game = Button(text='Game Information', font_size='30sp', size_hint=(1, 1))
         btn_game.bind(on_press=self.show_game_info)
         layout.add_widget(btn_game)
 
-        btn_dev = Button(text='Developer Information', font_size='24sp', size_hint=(1, None), height=100)
+        btn_dev = Button(text='Developer Information', font_size='30sp', size_hint=(1, 1))
         btn_dev.bind(on_press=self.show_dev_info)
         layout.add_widget(btn_dev)
 
-        btn_linkedin = Button(text='LinkedIn', font_size='24sp', size_hint=(1, None), height=100)
+        btn_linkedin = Button(text='LinkedIn', font_size='30sp', size_hint=(1, 1))
         btn_linkedin.bind(on_press=lambda x: webbrowser.open('https://www.linkedin.com'))
         layout.add_widget(btn_linkedin)
 
-        btn_github = Button(text='GitHub', font_size='24sp', size_hint=(1, None), height=100)
+        btn_github = Button(text='GitHub', font_size='30sp', size_hint=(1, 1))
         btn_github.bind(on_press=lambda x: webbrowser.open('https://github.com'))
         layout.add_widget(btn_github)
 
-        btn_donate = Button(text='Donate', font_size='24sp', size_hint=(1, None), height=100)
+        btn_donate = Button(text='Donate', font_size='30sp', size_hint=(1, 1))
         btn_donate.bind(on_press=self.open_donate)
         layout.add_widget(btn_donate)
 
-        back_btn = Button(text='Back', font_size='24sp', size_hint=(1, None), height=100)
+        back_btn = Button(text='Back', font_size='30sp', size_hint=(1, 1))
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
 
