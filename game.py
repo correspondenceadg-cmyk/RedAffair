@@ -520,7 +520,7 @@ def play_game():
         "cleaver_analysis": (["Unknown"], []),
     }
 
-    # -- Evidence aliases for human-readable and shorthand names --
+    # -- Evidence aliases --
     EVIDENCE_ALIASES = {
         "payphone log": "aiden_alibi", "phone log": "aiden_alibi", "log": "aiden_alibi", "payphone": "aiden_alibi", "p log": "aiden_alibi",
         "wet floor sign": "luka_alibi", "floor sign": "luka_alibi", "sheen": "luka_alibi", "wet floor": "luka_alibi",
@@ -768,14 +768,12 @@ def play_game():
 
     def examine(item):
         nonlocal body_examined, bathroom_panel_revealed
-        # Check for scanner/database usage
         if item.startswith("with scanner "):
             examine_scanner(item)
             return
         if item.startswith("with database "):
             examine_database(item)
             return
-        # Special items
         if item == "scanner":
             print("The portable forensic scanner. It can verify physical evidence with a beam of light and a lot of attitude.")
             return
@@ -816,10 +814,8 @@ def play_game():
             inventory.append(item)
             locations[current_location]["items"].remove(item)
             return
-        # Evidence alias resolution
         ev_id = EVIDENCE_ALIASES.get(item.lower())
         if ev_id is None:
-            # direct check in EVIDENCE_DESCRIPTIONS keys
             if item in EVIDENCE_DESCRIPTIONS:
                 ev_id = item
         if ev_id:
@@ -828,11 +824,7 @@ def play_game():
             impl_str = ", ".join(impl) if impl else "None"
             exon_str = ", ".join(exon) if exon else "None"
             print(f"{desc}\nImplicates: {impl_str}\nExonerates: {exon_str}")
-            if ev_id not in clues and ev_id in EVIDENCE_DESCRIPTIONS:
-                # only add if it's something you'd find? Actually we don't auto-add; evidence is added via search/talk.
-                pass
             return
-        # Notepad
         if item == "notepad":
             show_notepad()
             return
@@ -1227,7 +1219,6 @@ def play_game():
         if not sus:
             print("Accuse who? Make up your mind, detective.")
             return
-        # Check for plant command
         if sus.startswith("plant "):
             parts = sus[6:].split(" on ")
             item = parts[0].strip() if len(parts) > 0 else ""
