@@ -421,7 +421,7 @@ class GameUI(BoxLayout):
         theme = self.theme
         fg_color = theme['fg']
         if app.custom_palette_enabled:
-            fg_color = app.custom_palette
+            fg_color = app.custom_fg_color
 
         self.output_label = Label(
             text='',
@@ -592,16 +592,16 @@ class MenuScreen(Screen):
         settings_btn.bind(on_press=self.open_settings)
         layout.add_widget(settings_btn)
 
-        donate_btn = Button(
-            text='Donate',
+        about_btn = Button(
+            text='About',
             font_size='24sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
             height=100
         )
-        donate_btn.bind(on_press=self.open_donate)
-        layout.add_widget(donate_btn)
+        about_btn.bind(on_press=self.open_about)
+        layout.add_widget(about_btn)
 
         self.add_widget(layout)
 
@@ -629,8 +629,67 @@ class MenuScreen(Screen):
     def open_settings(self, instance):
         self.manager.current = 'settings'
 
+    def open_about(self, instance):
+        self.manager.current = 'about'
+
+# ---------- About Screen ----------
+class AboutScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        layout = BoxLayout(orientation='vertical', padding=50, spacing=20)
+        with self.canvas.before:
+            Color(0, 0, 0, 1)
+            self.bg_rect = Rectangle(size=self.size, pos=self.pos)
+        self.bind(size=self._update_bg, pos=self._update_bg)
+
+        btn_game = Button(text='Game Information', font_size='24sp', size_hint=(1, None), height=100)
+        btn_game.bind(on_press=self.show_game_info)
+        layout.add_widget(btn_game)
+
+        btn_dev = Button(text='Developer Information', font_size='24sp', size_hint=(1, None), height=100)
+        btn_dev.bind(on_press=self.show_dev_info)
+        layout.add_widget(btn_dev)
+
+        btn_linkedin = Button(text='LinkedIn', font_size='24sp', size_hint=(1, None), height=100)
+        btn_linkedin.bind(on_press=lambda x: webbrowser.open('https://www.linkedin.com'))
+        layout.add_widget(btn_linkedin)
+
+        btn_github = Button(text='GitHub', font_size='24sp', size_hint=(1, None), height=100)
+        btn_github.bind(on_press=lambda x: webbrowser.open('https://github.com'))
+        layout.add_widget(btn_github)
+
+        btn_donate = Button(text='Donate', font_size='24sp', size_hint=(1, None), height=100)
+        btn_donate.bind(on_press=self.open_donate)
+        layout.add_widget(btn_donate)
+
+        back_btn = Button(text='Back', font_size='24sp', size_hint=(1, None), height=100)
+        back_btn.bind(on_press=self.go_back)
+        layout.add_widget(back_btn)
+
+        self.add_widget(layout)
+
+    def _update_bg(self, instance, value):
+        self.bg_rect.size = instance.size
+        self.bg_rect.pos = instance.pos
+
+    def show_game_info(self, instance):
+        popup = Label(text='Red Affair - A noir detective game in space.', font_size='18sp', color=(1,0,0,1))
+        self._show_modal(popup)
+
+    def show_dev_info(self, instance):
+        popup = Label(text='Developed by SiliCast Games.', font_size='18sp', color=(1,0,0,1))
+        self._show_modal(popup)
+
+    def _show_modal(self, content):
+        from kivy.uix.popup import Popup
+        popup = Popup(title='Info', content=content, size_hint=(0.8, 0.4))
+        popup.open()
+
     def open_donate(self, instance):
         self.manager.current = 'donate'
+
+    def go_back(self, instance):
+        self.manager.current = 'menu'
 
 # ---------- Donate Screen ----------
 class DonateScreen(Screen):
@@ -698,7 +757,7 @@ class DonateScreen(Screen):
         webbrowser.open('https://cash.app/$commiesimplord')
 
     def go_back(self, instance):
-        self.manager.current = 'menu'
+        self.manager.current = 'about'
 
 # ---------- Settings Screen ----------
 class SettingsScreen(Screen):
@@ -776,7 +835,7 @@ class SettingsScreen(Screen):
         self.layout.add_widget(self.music_toggle)
 
         self.dyslexic_font_toggle = ToggleButton(
-            text='Dyslexia-Friendly Font: OFF',
+            text='Dyslexic Font: OFF',
             state='normal',
             font_name=FONT_PATH if os.path.exists(FONT_PATH) else None,
             font_size='24sp',
@@ -801,21 +860,14 @@ class SettingsScreen(Screen):
         self.custom_palette_toggle.bind(on_press=self.toggle_custom_palette)
         self.layout.add_widget(self.custom_palette_toggle)
 
-        self.palette_container = BoxLayout(orientation='vertical', size_hint_y=None, height=200, spacing=10)
+        self.palette_container = BoxLayout(orientation='vertical', size_hint_y=None, height=600, spacing=10)
         self.palette_container.opacity = 0
         self.palette_container.disabled = True
-        self.r_slider = Slider(min=0, max=1, value=1, size_hint=(1, None), height=50)
-        self.g_slider = Slider(min=0, max=1, value=0, size_hint=(1, None), height=50)
-        self.b_slider = Slider(min=0, max=1, value=0, size_hint=(1, None), height=50)
-        self.r_slider.bind(value=self.on_palette_change)
-        self.g_slider.bind(value=self.on_palette_change)
-        self.b_slider.bind(value=self.on_palette_change)
-        self.palette_container.add_widget(Label(text='R', font_size='16sp', color=(1,1,1,1), size_hint_y=None, height=20))
-        self.palette_container.add_widget(self.r_slider)
-        self.palette_container.add_widget(Label(text='G', font_size='16sp', color=(1,1,1,1), size_hint_y=None, height=20))
-        self.palette_container.add_widget(self.g_slider)
-        self.palette_container.add_widget(Label(text='B', font_size='16sp', color=(1,1,1,1), size_hint_y=None, height=20))
-        self.palette_container.add_widget(self.b_slider)
+
+        self._build_color_section(self.palette_container, "Base Text Color", 'base')
+        self._build_color_section(self.palette_container, "Background Color", 'bg')
+        self._build_color_section(self.palette_container, "Special Text Color", 'special')
+
         self.layout.add_widget(self.palette_container)
 
         self.track_label = Label(
@@ -900,6 +952,42 @@ class SettingsScreen(Screen):
         self.scroll.add_widget(self.layout)
         self.add_widget(self.scroll)
 
+    def _build_color_section(self, parent, title, key):
+        box = BoxLayout(orientation='vertical', spacing=5, size_hint_y=None, height=180)
+        lbl = Label(text=title, font_size='18sp', color=(1,1,1,1), size_hint_y=None, height=30)
+        box.add_widget(lbl)
+        r_slider = Slider(min=0, max=1, value=1 if key in ('base','special') else 0, size_hint_y=None, height=40)
+        g_slider = Slider(min=0, max=1, value=0 if key in ('base','special') else 0, size_hint_y=None, height=40)
+        b_slider = Slider(min=0, max=1, value=0, size_hint_y=None, height=40)
+        r_slider.bind(value=lambda inst, val: self._on_section_slider(key, inst, val))
+        g_slider.bind(value=lambda inst, val: self._on_section_slider(key, inst, val))
+        b_slider.bind(value=lambda inst, val: self._on_section_slider(key, inst, val))
+        box.add_widget(Label(text='R', font_size='14sp', color=(1,0,0,1), size_hint_y=None, height=20))
+        box.add_widget(r_slider)
+        box.add_widget(Label(text='G', font_size='14sp', color=(0,1,0,1), size_hint_y=None, height=20))
+        box.add_widget(g_slider)
+        box.add_widget(Label(text='B', font_size='14sp', color=(0,0,1,1), size_hint_y=None, height=20))
+        box.add_widget(b_slider)
+        preview = Label(text='Preview', size_hint_y=None, height=30, color=(1,1,1,1))
+        box.add_widget(preview)
+        setattr(self, f'{key}_sliders', (r_slider, g_slider, b_slider, preview))
+        parent.add_widget(box)
+
+    def _on_section_slider(self, key, instance, value):
+        app = App.get_running_app()
+        if app.custom_palette_enabled:
+            r, g, b, preview = getattr(self, f'{key}_sliders')
+            color = (r.value, g.value, b.value, 1)
+            if key == 'base':
+                app.custom_fg_color = color
+            elif key == 'bg':
+                app.custom_bg_color = color
+            elif key == 'special':
+                app.custom_special_color = color
+            preview.color = color
+            game_screen = self.manager.get_screen('game')
+            game_screen.update_theme(app.current_theme)
+
     def _update_bg(self, instance, value):
         self.bg_rect.size = instance.size
         self.bg_rect.pos = instance.pos
@@ -910,15 +998,27 @@ class SettingsScreen(Screen):
         self._update_track_label()
         self._update_vol_bar()
         self.dyslexic_font_toggle.state = 'down' if app.use_dyslexic_font else 'normal'
-        self.dyslexic_font_toggle.text = 'Dyslexia-Friendly Font: ON' if app.use_dyslexic_font else 'Dyslexia-Friendly Font: OFF'
+        self.dyslexic_font_toggle.text = 'Dyslexic Font: ON' if app.use_dyslexic_font else 'Dyslexic Font: OFF'
         self.custom_palette_toggle.state = 'down' if app.custom_palette_enabled else 'normal'
         self.custom_palette_toggle.text = 'Custom Palette: ON' if app.custom_palette_enabled else 'Custom Palette: OFF'
         self.palette_container.opacity = 1 if app.custom_palette_enabled else 0
         self.palette_container.disabled = not app.custom_palette_enabled
         if app.custom_palette_enabled:
-            self.r_slider.value = app.custom_palette[0]
-            self.g_slider.value = app.custom_palette[1]
-            self.b_slider.value = app.custom_palette[2]
+            r,g,b,_ = app.custom_fg_color
+            self.base_sliders[0].value = r
+            self.base_sliders[1].value = g
+            self.base_sliders[2].value = b
+            r,g,b,_ = app.custom_bg_color
+            self.bg_sliders[0].value = r
+            self.bg_sliders[1].value = g
+            self.bg_sliders[2].value = b
+            r,g,b,_ = app.custom_special_color
+            self.special_sliders[0].value = r
+            self.special_sliders[1].value = g
+            self.special_sliders[2].value = b
+            self.base_sliders[3].color = app.custom_fg_color
+            self.bg_sliders[3].color = app.custom_bg_color
+            self.special_sliders[3].color = app.custom_special_color
 
     def _update_track_label(self):
         app = App.get_running_app()
@@ -977,7 +1077,7 @@ class SettingsScreen(Screen):
     def toggle_dyslexic_font(self, instance):
         app = App.get_running_app()
         app.use_dyslexic_font = instance.state == 'down'
-        instance.text = 'Dyslexia-Friendly Font: ON' if app.use_dyslexic_font else 'Dyslexia-Friendly Font: OFF'
+        instance.text = 'Dyslexic Font: ON' if app.use_dyslexic_font else 'Dyslexic Font: OFF'
 
     def toggle_custom_palette(self, instance):
         app = App.get_running_app()
@@ -986,14 +1086,6 @@ class SettingsScreen(Screen):
         self.palette_container.opacity = 1 if app.custom_palette_enabled else 0
         self.palette_container.disabled = not app.custom_palette_enabled
         if app.custom_palette_enabled:
-            app.custom_palette = (self.r_slider.value, self.g_slider.value, self.b_slider.value, 1)
-            game_screen = self.manager.get_screen('game')
-            game_screen.update_theme(app.current_theme)
-
-    def on_palette_change(self, instance, value):
-        app = App.get_running_app()
-        if app.custom_palette_enabled:
-            app.custom_palette = (self.r_slider.value, self.g_slider.value, self.b_slider.value, 1)
             game_screen = self.manager.get_screen('game')
             game_screen.update_theme(app.current_theme)
 
@@ -1039,7 +1131,7 @@ class GameScreen(Screen):
             app = App.get_running_app()
             fg_color = theme['fg']
             if app.custom_palette_enabled:
-                fg_color = app.custom_palette
+                fg_color = app.custom_fg_color
             self.game_ui.output_label.color = fg_color
             self.game_ui.input_box.foreground_color = fg_color
             self.game_ui.input_box.background_color = theme['input_bg']
@@ -1064,19 +1156,19 @@ class CheatsScreen(Screen):
         lbl = Label(text='CHEATS', font_size='30sp', color=(1,0,0,1))
         layout.add_widget(lbl)
 
-        self.cuffs_toggle = ToggleButton(text='Unlimited Cuffs: OFF', font_size='24sp')
+        self.cuffs_toggle = ToggleButton(text='Unlimited Cuffs: OFF', font_size='24sp', size_hint=(1, None), height=100)
         self.cuffs_toggle.bind(on_press=self.toggle_cuffs)
         layout.add_widget(self.cuffs_toggle)
 
-        self.god_toggle = ToggleButton(text='God Mode: OFF', font_size='24sp')
+        self.god_toggle = ToggleButton(text='God Mode: OFF', font_size='24sp', size_hint=(1, None), height=100)
         self.god_toggle.bind(on_press=self.toggle_god)
         layout.add_widget(self.god_toggle)
 
-        self.countenance_toggle = ToggleButton(text='Infinite Countenance: OFF', font_size='24sp')
+        self.countenance_toggle = ToggleButton(text='Infinite Countenance: OFF', font_size='24sp', size_hint=(1, None), height=100)
         self.countenance_toggle.bind(on_press=self.toggle_countenance)
         layout.add_widget(self.countenance_toggle)
 
-        back_btn = Button(text='Back', font_size='24sp')
+        back_btn = Button(text='Back', font_size='24sp', size_hint=(1, None), height=100)
         back_btn.bind(on_press=self.go_back)
         layout.add_widget(back_btn)
 
@@ -1133,18 +1225,22 @@ class SoundTestScreen(Screen):
         play_btn.bind(on_press=self.play_sound)
         next_btn = Button(text='>', font_size='30sp')
         next_btn.bind(on_press=self.next_sound)
+        stop_btn = Button(text='Stop', font_size='30sp')
+        stop_btn.bind(on_press=self.stop_sound)
         nav.add_widget(prev_btn)
         nav.add_widget(play_btn)
+        nav.add_widget(stop_btn)
         nav.add_widget(next_btn)
         self.layout.add_widget(nav)
 
-        back_btn = Button(text='Back to Settings', font_size='24sp')
+        back_btn = Button(text='Back to Settings', font_size='24sp', size_hint=(1, None), height=100)
         back_btn.bind(on_press=self.go_back)
         self.layout.add_widget(back_btn)
 
         self.add_widget(self.layout)
         self.sound_list = []
         self.current_index = 0
+        self.active_sound = None
 
     def _update_bg(self, instance, value):
         self.bg_rect.size = instance.size
@@ -1180,16 +1276,28 @@ class SoundTestScreen(Screen):
     def play_sound(self, instance):
         if not self.sound_list:
             return
+        self.stop_sound(None)
         typ, name, sound = self.sound_list[self.current_index]
         if typ == 'SFX' and sound:
             sound.play()
+            self.active_sound = sound
         elif typ == 'MUSIC':
             app = App.get_running_app()
             s = SoundLoader.load(name)
             if s:
                 s.play()
+                self.active_sound = s
+
+    def stop_sound(self, instance):
+        if self.active_sound:
+            self.active_sound.stop()
+            self.active_sound = None
+
+    def on_leave(self):
+        self.stop_sound(None)
 
     def go_back(self, instance):
+        self.stop_sound(None)
         self.manager.current = 'settings'
 
 # ---------- Root Widget ----------
@@ -1199,6 +1307,7 @@ class RootWidget(FloatLayout):
         self.sm = ScreenManager(transition=FadeTransition(duration=0.5))
         self.sm.add_widget(SplashScreen(name='splash'))
         self.sm.add_widget(MenuScreen(name='menu'))
+        self.sm.add_widget(AboutScreen(name='about'))
         self.sm.add_widget(DonateScreen(name='donate'))
         self.sm.add_widget(GameScreen(name='game'))
         self.sm.add_widget(SettingsScreen(name='settings'))
@@ -1220,7 +1329,9 @@ class RedAffairApp(App):
     music_enabled = True
     use_dyslexic_font = False
     custom_palette_enabled = False
-    custom_palette = (1, 0, 0, 1)
+    custom_fg_color = (1, 0, 0, 1)
+    custom_bg_color = (0, 0, 0, 1)
+    custom_special_color = (0, 1, 0, 1)
     cheat_unlimited_cuffs = False
     cheat_god_mode = False
     cheat_infinite_countenance = False
