@@ -572,33 +572,33 @@ class MenuScreen(Screen):
 
         start_btn = Button(
             text='Start Game',
-            font_size='24sp',
+            font_size='28sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=100
+            height=120
         )
         start_btn.bind(on_press=self.start_game)
         layout.add_widget(start_btn)
 
         settings_btn = Button(
             text='Settings',
-            font_size='24sp',
+            font_size='28sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=100
+            height=120
         )
         settings_btn.bind(on_press=self.open_settings)
         layout.add_widget(settings_btn)
 
         about_btn = Button(
             text='About',
-            font_size='24sp',
+            font_size='28sp',
             background_color=(0.2, 0, 0, 1),
             color=(1, 1, 1, 1),
             size_hint=(1, None),
-            height=100
+            height=120
         )
         about_btn.bind(on_press=self.open_about)
         layout.add_widget(about_btn)
@@ -673,16 +673,13 @@ class AboutScreen(Screen):
         self.bg_rect.pos = instance.pos
 
     def show_game_info(self, instance):
-        popup = Label(text='Red Affair - A noir detective game in space.', font_size='18sp', color=(1,0,0,1))
-        self._show_modal(popup)
+        from kivy.uix.popup import Popup
+        popup = Popup(title='Info', content=Label(text='Red Affair - A noir detective game in space.', font_size='18sp', color=(1,0,0,1)), size_hint=(0.8, 0.4))
+        popup.open()
 
     def show_dev_info(self, instance):
-        popup = Label(text='Developed by SiliCast Games.', font_size='18sp', color=(1,0,0,1))
-        self._show_modal(popup)
-
-    def _show_modal(self, content):
         from kivy.uix.popup import Popup
-        popup = Popup(title='Info', content=content, size_hint=(0.8, 0.4))
+        popup = Popup(title='Info', content=Label(text='Developed by SiliCast Games.', font_size='18sp', color=(1,0,0,1)), size_hint=(0.8, 0.4))
         popup.open()
 
     def open_donate(self, instance):
@@ -876,7 +873,10 @@ class SettingsScreen(Screen):
             font_size='18sp',
             color=(1, 0, 0, 1),
             size_hint=(1, None),
-            height=50
+            height=80,
+            halign='center',
+            valign='middle',
+            text_size=(Window.width - 40, None)
         )
         self.layout.add_widget(self.track_label)
 
@@ -994,6 +994,7 @@ class SettingsScreen(Screen):
 
     def on_enter(self):
         app = App.get_running_app()
+        self.track_label.text_size = (self.width - 40, None)
         self.volume_slider.value = app.music_volume
         self._update_track_label()
         self._update_vol_bar()
