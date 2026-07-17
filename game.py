@@ -8,7 +8,7 @@ def play_game():
     BOLD = '\033[1m'
     RESET = '\033[0m'
 
-    TOTAL_NON_MISLEADING = 21   # fixed total of real clues
+    TOTAL_NON_MISLEADING = 21 
 
     def clear_screen():
         print("##CLEARSCREEN##")
