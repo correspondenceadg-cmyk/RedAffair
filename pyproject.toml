@@ -63,10 +63,7 @@ icon = "RAlogos.png"
 presplash = "presplash.png"
 presplash_color = "#000000"
 
-archs = [
-    "arm64-v8a",
-    "x86_64",
-]
+archs = []
 gradle_dependencies = []
 gradle_plugins = []
 permissions = []
