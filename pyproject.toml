@@ -63,7 +63,7 @@ icon = "RAlogos.png"
 presplash = "presplash.png"
 presplash_color = "#000000"
 
-archs = []
+archs = ["arm64-v8a"]
 gradle_dependencies = []
 gradle_plugins = []
 permissions = []
@@ -74,42 +74,8 @@ sdk = "36"
 ndk = "28c"
 ndk_api = 28
 
-global_tools = true # Set to <false> to use project-local SDK/NDK (./.kivyschool); set to <true> to use shared/global versions (~/.kivyschool or global_tools_path)
-#global_tools_path = "~/.kivyschool" # Override root path when global_tools = true; ignored when global_tools = false
-
-# sdk_path = "/path/to/android-sdk"
-# ndk_path = "/path/to/android-ndk"
-# java_path = "/path/to/jdk"
-
-# # Format 1: Flat list (Destination, Source 1, Source 2)
-# include_files = [
-#     ["gradle/app", "./google-services.json", "./some-other-config.xml"]
-# ]
-
-# # Format 2: Nested list (Destination, [Source 1, Source 2])
-# include_files = [
-#     ["gradle/app", ["./google-services.json", "./some-other-config.xml"]]
-# ]
-
-# pre_build = "path/to/android_prebuild.py"
-# post_build = "path/to/android_prebuild.py"
-
+global_tools = true
 byte_compile_python = true
-
-# <meta-data> entries inside <application>
-# [tool.kivy-school.android.meta_data]
-# "com.google.android.gms.ads.APPLICATION_ID" = "ca-app-pub-xxxxxxxx~xxxxxxxx"
-
-# --- Services ---
-# [[tool.kivy-school.android.services]]
-# name = "MyService1"
-# start_type = "START_NOT_STICKY"
-# entrypoint = "hello_world.services.myservice1"
-# foreground = true
-# foreground_service_type = "location|dataSync"
-# notification_title = "MyService1 Running"
-# notification_text = "Service is managing background data."
-# notification_icon = "stat_notify_sync"
 
 [tool.kivy-school.ios]
 bundle_id = "org.example.redaffair"
@@ -118,15 +84,9 @@ info_plist = {}
 entitlements = {}
 permissions = []
 frameworks = []
-#developer_team = "ABC123XYZ" # Set to your Apple Developer Team ID (e.g. ABC123XYZ) to enable automatic code signing; leave as null for manual signing
-# pre_build = "path/to/ios_prebuild.py"
-# post_build = "path/to/ios_postbuild.py"
 
 [tool.kivy-school.macos]
 bundle_id = "org.example.redaffair"
 minimum_deployment = "11.5"
 info_plist = {}
 entitlements = {}
-#developer_team = "ABC123XYZ" # Set to your Apple Developer Team ID (e.g. ABC123XYZ) to enable automatic code signing; leave as null for manual signing
-# pre_build = "path/to/android_prebuild.py"
-# post_build = "path/to/android_postbuild.py"
