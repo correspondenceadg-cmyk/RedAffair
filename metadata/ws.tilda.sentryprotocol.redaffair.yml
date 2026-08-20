@@ -4,13 +4,13 @@ Web Site: https://correspondenceadg.itch.io/red-affair
 Source Code: https://github.com/correspondenceadg-cmyk/RedAffair
 Issue Tracker: https://github.com/correspondenceadg-cmyk/RedAffair/issues
 Name: Red Affair
-Summary: A text‑based detective game written in Python/Kivy
+Summary: A text-based detective game written in Python/Kivy
 Description: |-
-  Red Affair is a text‑based adventure and detective game. 
+  Red Affair is a text-based adventure and detective game. 
   Uncover the mystery, solve puzzles, and make choices.
 
   Features:
-  - Immersive text‑based exploration.
+  - Immersive text-based exploration.
   - Original story and characters.
   - Custom Python/Kivy engine.
 Auto Update Mode: Version v%v
