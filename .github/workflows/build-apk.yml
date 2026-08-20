@@ -33,8 +33,11 @@ jobs:
         yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
         $ANDROID_HOME/tools/bin/sdkmanager "ndk;28.0.12433566"
         ln -sf $ANDROID_HOME/ndk/28.0.12433566 /home/runner/.buildozer/android/platform/android-ndk-r28c
-    - name: Install dependencies
-      run: uv sync --dev
+    - name: Force clean uv cache and rebuild
+      run: |
+        rm -rf project_dist/gradle
+        uv cache clean
+        uv sync --dev
     - name: Build APK
       run: uv run ksproject android build debug --clean
     - name: Upload APK
