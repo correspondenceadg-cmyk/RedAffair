@@ -1,12 +1,31 @@
+Categories: Games
+License: GPL-3.0-or-later
+Web Site: https://correspondenceadg.itch.io/red-affair
+Source Code: https://github.com/correspondenceadg-cmyk/RedAffair
+Issue Tracker: https://github.com/correspondenceadg-cmyk/RedAffair/issues
+Name: Red Affair
+Summary: A text‑based detective game written in Python/Kivy
+Description: |-
+  Red Affair is a text‑based adventure and detective game. 
+  Uncover the mystery, solve puzzles, and make choices.
+
+  Features:
+  - Immersive text‑based exploration.
+  - Original story and characters.
+  - Custom Python/Kivy engine.
+Auto Update Mode: Version v%v
+Current Version: 2.0.0
+Current Version Code: 20000
+
 Builds:
-  - versionName: 1.222.2
-    versionCode: 12222
-    commit: v1.222.2
+  - versionName: 2.0.0
+    versionCode: 20000
+    commit: v2.0
     subdir: .
     gradle:
       - yes
     build:
-      - pip install buildozer
-      - buildozer android debug
+      - uv sync --dev
+      - uv run ksproject android build debug
     ndk: 28.0.12433566
     sdk: 36
