@@ -10,10 +10,10 @@ jobs:
       with:
         distribution: temurin
         java-version: 17
-    - name: Setup Python
-      uses: actions/setup-python@v5
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v6
       with:
-        python-version: "3.10"
+        python-version: "3.13"
     - name: Install system deps
       run: |
         sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
@@ -33,12 +33,10 @@ jobs:
         yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
         $ANDROID_HOME/tools/bin/sdkmanager "ndk;28.0.12433566"
         ln -sf $ANDROID_HOME/ndk/28.0.12433566 /home/runner/.buildozer/android/platform/android-ndk-r28c
-    - name: Install Python build tools
-      run: |
-        pip install cython buildozer
+    - name: Install dependencies
+      run: uv sync --dev
     - name: Build APK
-      run: |
-        uv run ksproject android build debug --clean
+      run: uv run ksproject android build debug --clean
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
