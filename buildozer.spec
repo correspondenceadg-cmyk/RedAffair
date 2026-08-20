@@ -14,7 +14,10 @@ android.accept_sdk_license = True
 android.ndk = 28c
 android.api = 36
 android.minapi = 28
+android.ndk_api = 28
+android.gradle_api = 36
 android.archs = arm64-v8a
+android.p4a_extra_arguments = --ignore-setup-py --no-compile
 
 [buildozer]
 log_level = 2
