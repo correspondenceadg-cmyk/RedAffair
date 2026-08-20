@@ -697,7 +697,7 @@ class AboutScreen(Screen):
         from kivy.uix.boxlayout import BoxLayout
         content = BoxLayout(orientation='vertical', padding=10)
         label = Label(
-            text="SiliCast Games is a single-member independent developer project that is seeking to reinvigorate and reintroduce classic styles of games from a bygone era. Everything used in the games is either open-source, common use, or made entirely by hand. At no point is money ever requested for the download, use, or distribution of this game, the files therein, or the identity of the studio. For questions and comments, check the github and linkedin buttons or email me at\n\ncorrespondenceadg@gmail.com",
+            text="SiliCast Games is a single-member independent developer project that is seeking to reinvigorate and reintroduce classic styles of games from a bygone era. Everything used in the games is either open-source, common use, or made entirely by hand. At no point is money ever requested for the download, use, or distribution of this game, the files therein, or the identity of the studio. For questions and comments, check the github and linkedin buttons or email me at\n\ncorrespondenceadg@gmail.com\n\nSpecial Thanks: Filipe Marchesini for helping me migrate to ksproject",
             font_size='18sp',
             color=(1,0,0,1),
             size_hint_y=None,
@@ -1118,7 +1118,7 @@ class PaletteScreen(Screen):
         self.add_widget(self.scroll)
 
     def _build_section(self, title, key):
-        box = BoxLayout(orientation='vertical', spacing=5, size_hint_y=None, height=180)
+        box = BoxLayout(orientation='vertical', spacing=15, size_hint_y=None, height=210)
         lbl = Label(text=title, font_size='18sp', color=(1,1,1,1), size_hint_y=None, height=30)
         box.add_widget(lbl)
         r_slider = Slider(min=0, max=1, value=1, size_hint_y=None, height=40)
@@ -1423,9 +1423,9 @@ class RedAffairApp(App):
     cheat_infinite_countenance = False
 
     music_tracks = [
-        'audio/track1.ogg',
-        'audio/track2.ogg',
         'audio/track3.ogg',
+        'audio/track2.ogg',
+        'audio/track1.ogg',
         'audio/track4.ogg'
     ]
     music_info = {
