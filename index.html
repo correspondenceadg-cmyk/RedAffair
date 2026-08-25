@@ -61,7 +61,6 @@
             outline: none;
             caret-color: #ff0000;
         }
-        /* CRT Scanline effect */
         #terminal::before {
             content: "";
             position: absolute;
@@ -86,20 +85,22 @@
         let inputResolver = null;
 
         async function main() {
-            // Load Pyodide
             pyodide = await loadPyodide();
 
-            // Override Python's print and input
             pyodide.runPython(`
                 import sys, _pyodide
                 sys.stdout.write = lambda s: _pyodide.output(s)
                 sys.stdin.readline = lambda: _pyodide.input()
             `);
 
-            // Expose functions to Python
             window.pyodide = pyodide;
             window._pyodide = {
                 output: (text) => {
+                    if (text.startsWith("__SFX__")) {
+                        let soundName = text.substring(7).trim();
+                        playSfx(soundName);
+                        return;
+                    }
                     let out = document.getElementById('output');
                     out.innerText += text;
                     out.scrollTop = out.scrollHeight;
@@ -113,16 +114,49 @@
                 }
             };
 
-            // Load your game.py as a string
             let response = await fetch('game_browser.py');
             let gameText = await response.text();
             
-            // Run the game
             pyodide.runPython(gameText);
             pyodide.runPythonAsync("import game_browser; game_browser.start()");
+
+            startAmbient();
         }
 
-        // Handle Enter key in the input box
+        function playSfx(name) {
+            let path = `audio/sfx/${name}.ogg`;
+            let audio = new Audio(path);
+            audio.play().catch(e => console.error('Audio failed:', e));
+        }
+
+        function startAmbient() {
+            let hum = new Audio('audio/crthum.ogg');
+            hum.loop = true;
+            hum.volume = 0.15;
+            hum.play().catch(e => console.error('Hum failed:', e));
+
+            scheduleFootsteps();
+            scheduleSiren();
+        }
+
+        function scheduleFootsteps() {
+            let delay = Math.random() * (21 - 7) + 7;
+            setTimeout(() => {
+                let footstep = new Audio('audio/footsteps.ogg');
+                footstep.play().catch(e => console.error('Footstep failed:', e));
+                scheduleFootsteps();
+            }, delay * 1000);
+        }
+
+        function scheduleSiren() {
+            let delay = Math.random() * (42 - 21) + 21;
+            setTimeout(() => {
+                let siren = new Audio('audio/siren.ogg');
+                siren.play().catch(e => console.error('Siren failed:', e));
+                scheduleSiren();
+            }, delay * 1000);
+        }
+
         document.getElementById('input').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && waitingForInput && inputResolver) {
                 let val = document.getElementById('input').value;
