@@ -5,7 +5,14 @@ import os
 import _pyodide
 from pyodide.ffi import run_sync
 
-sys.path.insert(0, 'src/redaffair')
+# Section: Verbose Diagnostics
+print("--- ENGINE BOOT ---")
+print("CWD:", os.getcwd())
+print("DIRECTORY FILES:", os.listdir('.'))
+print("--- END DIAG ---")
+
+# Force Python to look exactly where the zip is extracted
+sys.path.insert(0, os.getcwd())
 import game
 
 # Section: Web SFX Queue
@@ -18,13 +25,13 @@ class WebSFXQueue:
             event = 'miss' if self.miss_counter % 2 == 1 else 'miss2'
         _pyodide.output(f"__SFX__{event}")
 
-# Section: Synchronous Input
+# Section: Sync Input
 def js_input():
-    # run_sync blocks the worker thread until the JS promise resolves
     return run_sync(_pyodide.input())
 
 # Section: Game Loop
 def start():
+    sys.stdout.write("\n\n--- ENGINE STARTED ---\n\n")
     game.clear_screen = lambda: sys.stdout.write("\n\n--- SCREEN CLEARED ---\n\n")
     game.sfx_queue = WebSFXQueue()
     sys.stdin.readline = js_input
