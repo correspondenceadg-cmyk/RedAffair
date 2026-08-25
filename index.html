@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Affair - Web</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
+        body {
+            background: #000;
+            color: #ff0000;
+            font-family: 'VT323', monospace;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #terminal {
+            width: 90%;
+            max-width: 900px;
+            height: 90vh;
+            background: #0a0000;
+            border: 4px solid #ff0000;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.3);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        #output {
+            flex: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 18px;
+            line-height: 1.4;
+            padding: 10px;
+            color: #ff3333;
+            scrollbar-width: thin;
+            scrollbar-color: #ff0000 #000;
+        }
+        #input-line {
+            display: flex;
+            border-top: 2px solid #ff0000;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        #prompt {
+            color: #ff0000;
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        #input {
+            background: transparent;
+            border: none;
+            color: #ff0000;
+            font-family: inherit;
+            font-size: 20px;
+            flex: 1;
+            outline: none;
+            caret-color: #ff0000;
+        }
+        /* CRT Scanline effect */
+        #terminal::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0) 4px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal">
+        <div id="output">Loading Red Affair engine...</div>
+        <div id="input-line">
+            <span id="prompt">></span>
+            <input id="input" type="text" autofocus>
+        </div>
+    </div>
+
+    <script>
+        let pyodide = null;
+        let waitingForInput = false;
+        let inputResolver = null;
+
+        async function main() {
+            // Load Pyodide
+            pyodide = await loadPyodide();
+
+            // Override Python's print and input
+            pyodide.runPython(`
+                import sys, _pyodide
+                sys.stdout.write = lambda s: _pyodide.output(s)
+                sys.stdin.readline = lambda: _pyodide.input()
+            `);
+
+            // Expose functions to Python
+            window.pyodide = pyodide;
+            window._pyodide = {
+                output: (text) => {
+                    let out = document.getElementById('output');
+                    out.innerText += text;
+                    out.scrollTop = out.scrollHeight;
+                },
+                input: () => {
+                    return new Promise((resolve) => {
+                        waitingForInput = true;
+                        inputResolver = resolve;
+                        document.getElementById('input').focus();
+                    });
+                }
+            };
+
+            // Load your game.py as a string
+            let response = await fetch('game_browser.py');
+            let gameText = await response.text();
+            
+            // Run the game
+            pyodide.runPython(gameText);
+            pyodide.runPythonAsync("import game_browser; game_browser.start()");
+        }
+
+        // Handle Enter key in the input box
+        document.getElementById('input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && waitingForInput && inputResolver) {
+                let val = document.getElementById('input').value;
+                document.getElementById('input').value = '';
+                waitingForInput = false;
+                inputResolver(val + '\n');
+                inputResolver = null;
+            }
+        });
+
+        main();
+    </script>
+</body>
+</html>
