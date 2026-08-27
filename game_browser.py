@@ -21,11 +21,12 @@ def js_input():
 # Section: Game Loop
 def start():
     sys.stdout.write("\n\n--- ENGINE STARTED ---\n\n")
-    import game
-    game.clear_screen = lambda: sys.stdout.write("\n\n--- SCREEN CLEARED ---\n\n")
-    game.sfx_queue = WebSFXQueue()
+    import __main__
+    play_game = __main__.play_game_func
+    clear_screen = lambda: sys.stdout.write("\n\n--- SCREEN CLEARED ---\n\n")
+    sfx_queue = WebSFXQueue()
     sys.stdin.readline = js_input
-    game.play_game()
+    play_game()
 
 if __name__ == "__main__":
     start()
