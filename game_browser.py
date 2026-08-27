@@ -1,15 +1,8 @@
+# Section: Imports
 import sys
-import types
 import random
-import os
 import _pyodide
 from pyodide.ffi import run_sync
-
-# Section: Manifest Game Module (Bypasses import system)
-game = types.ModuleType('game')
-with open('game.py', 'r') as f:
-    exec(compile(f.read(), 'game.py', 'exec'), game.__dict__)
-sys.modules['game'] = game
 
 # Section: Web SFX Queue
 class WebSFXQueue:
@@ -28,6 +21,7 @@ def js_input():
 # Section: Game Loop
 def start():
     sys.stdout.write("\n\n--- ENGINE STARTED ---\n\n")
+    import game
     game.clear_screen = lambda: sys.stdout.write("\n\n--- SCREEN CLEARED ---\n\n")
     game.sfx_queue = WebSFXQueue()
     sys.stdin.readline = js_input
