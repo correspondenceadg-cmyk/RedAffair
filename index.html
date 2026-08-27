@@ -25,8 +25,6 @@
 
     <script>
         let pyodide = null;
-        let inputQueue = [];
-        let waitingForInput = false;
         let outputDiv = document.getElementById('output');
 
         async function main() {
@@ -45,12 +43,8 @@
                         outputDiv.scrollTop = outputDiv.scrollHeight;
                     },
                     input: () => {
-                        return new Promise((resolve) => {
-                            inputQueue.push(resolve);
-                            waitingForInput = true;
-                            // Force focus on the input box
-                            setTimeout(() => document.getElementById('input').focus(), 10);
-                        });
+                        // Use native prompt to block safely without deadlock
+                        return prompt("Enter command: ");
                     }
                 };
 
@@ -82,19 +76,6 @@ __main__.play_game_func = game_module.play_game
                 console.error(error);
             }
         }
-
-        document.getElementById('input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                let val = document.getElementById('input').value;
-                document.getElementById('input').value = '';
-                if (inputQueue.length > 0) {
-                    let resolve = inputQueue.shift();
-                    if (resolve) {
-                        resolve(val + '\n');
-                    }
-                }
-            }
-        });
 
         function playSfx(name) {
             let audio = new Audio(`audio/sfx/${name}.ogg`);
