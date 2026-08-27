@@ -62,6 +62,7 @@
                 pyodide.runPython(`
 import sys, types
 game_module = types.ModuleType('game')
+game_module.__dict__['__name__'] = '__main__' 
 sys.modules['game'] = game_module
 exec(globals()['game_code'], game_module.__dict__)
 `);
