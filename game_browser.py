@@ -16,7 +16,7 @@ class WebSFXQueue:
 
 # Section: Sync Input
 def js_input():
-    return run_sync(_pyodide.input())
+    return run_sync(bridge.input())
 
 # Section: Game Loop
 def start():
