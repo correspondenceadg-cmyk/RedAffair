@@ -64,6 +64,8 @@ import sys, types
 game_module = types.ModuleType('game')
 sys.modules['game'] = game_module
 exec(globals()['game_code'], game_module.__dict__)
+import __main__
+__main__.play_game_func = game_module.play_game
 `);
 
                 outputDiv.innerText += "\nStep 5: Starting Game Loop...";
