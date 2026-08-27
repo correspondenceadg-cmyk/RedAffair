@@ -30,7 +30,7 @@
 
         async function main() {
             try {
-                outputDiv.innerText += "\nStep 1: Loading Pyodide (this downloads ~10MB)...";
+                outputDiv.innerText += "\nStep 1: Loading Pyodide...";
                 pyodide = await loadPyodide();
                 outputDiv.innerText += "\nStep 2: Pyodide loaded.";
 
@@ -60,15 +60,7 @@
                     sys.stdin.readline = lambda: bridge.input()
                 `);
 
-                outputDiv.innerText += "\nStep 4: Fetching game.py...";
-                let gameResponse = await fetch('game.py');
-                if (!gameResponse.ok) {
-                    throw new Error("HTTP " + gameResponse.status + " fetching game.py (check zip structure)");
-                }
-                let gameSource = await gameResponse.text();
-                pyodide.runPython(gameSource);
-
-                outputDiv.innerText += "\nStep 5: Fetching game_browser.py...";
+                outputDiv.innerText += "\nStep 4: Fetching game_browser.py...";
                 let response = await fetch('game_browser.py');
                 if (!response.ok) {
                     throw new Error("HTTP " + response.status + " fetching game_browser.py (check zip structure)");
@@ -76,9 +68,8 @@
                 let gameText = await response.text();
                 pyodide.runPython(gameText);
                 
-                outputDiv.innerText += "\nStep 6: Starting Game Loop...";
+                outputDiv.innerText += "\nStep 5: Starting Game Loop...";
                 pyodide.runPythonAsync("import game_browser; game_browser.start()");
-                
             } catch (error) {
                 outputDiv.innerText += "\n\n[ERROR]\n" + error.message;
                 console.error(error);
