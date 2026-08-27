@@ -72,7 +72,7 @@ __main__.play_game_func = game_module.play_game
 
                 outputDiv.innerText += "\nStep 5: Starting Game Loop...";
                 pyodide.runPython(browserSource);
-                pyodide.runPythonAsync("import game_browser; game_browser.start()");
+                pyodide.runPythonAsync("start()");
 
             } catch (error) {
                 outputDiv.innerText += "\n\n[ERROR]\n" + error.message;
