@@ -63,7 +63,7 @@
 import sys, types, __main__
 game_module = types.ModuleType('game')
 sys.modules['game'] = game_module
-code = globals()['game_code'].replace("if __name__ == '__main__':", "if False:")
+code = globals()['game_code'].replace("if __name__ == '__main__':", "if False:").replace('if __name__ == "__main__":', 'if False:')
 exec(code, game_module.__dict__)
 if not hasattr(game_module, 'play_game'):
     game_module.play_game = lambda: print("Error: play_game not found")
