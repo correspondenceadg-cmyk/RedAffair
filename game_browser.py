@@ -27,6 +27,3 @@ def start():
     sfx_queue = WebSFXQueue()
     sys.stdin.readline = js_input
     play_game()
-
-if __name__ == "__main__":
-    start()
