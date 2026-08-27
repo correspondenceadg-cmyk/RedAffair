@@ -5,16 +5,6 @@ import os
 import _pyodide
 from pyodide.ffi import run_sync
 
-# Section: Verbose Diagnostics
-print("--- ENGINE BOOT ---")
-print("CWD:", os.getcwd())
-print("DIRECTORY FILES:", os.listdir('.'))
-print("--- END DIAG ---")
-
-# Force Python to look exactly where the zip is extracted
-sys.path.insert(0, os.getcwd())
-import game
-
 # Section: Web SFX Queue
 class WebSFXQueue:
     def __init__(self):
