@@ -25,7 +25,8 @@
 
     <script>
         let pyodide = null;
-        let inputResolve = null;
+        let inputQueue = [];
+        let waitingForInput = false;
         let outputDiv = document.getElementById('output');
 
         async function main() {
@@ -45,8 +46,10 @@
                     },
                     input: () => {
                         return new Promise((resolve) => {
-                            inputResolve = resolve;
-                            document.getElementById('input').focus();
+                            inputQueue.push(resolve);
+                            waitingForInput = true;
+                            // Force focus on the input box
+                            setTimeout(() => document.getElementById('input').focus(), 10);
                         });
                     }
                 };
@@ -84,9 +87,11 @@ __main__.play_game_func = game_module.play_game
             if (e.key === 'Enter') {
                 let val = document.getElementById('input').value;
                 document.getElementById('input').value = '';
-                if (inputResolve) {
-                    inputResolve(val + '\n');
-                    inputResolve = null;
+                if (inputQueue.length > 0) {
+                    let resolve = inputQueue.shift();
+                    if (resolve) {
+                        resolve(val + '\n');
+                    }
                 }
             }
         });
