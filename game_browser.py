@@ -15,19 +15,14 @@ class WebSFXQueue:
 
 # Section: Sync Input
 def js_input():
-    # Directly call the bridge without run_sync to prevent deadlocks
     return bridge.input()
 
 # Section: Game Loop
 def start():
-    try:
-        sys.stdout.write("\n\n--- ENGINE STARTED ---\n\n")
-        import __main__
-        play_game = __main__.play_game_func
-        clear_screen = lambda: sys.stdout.write("\n\n--- SCREEN CLEARED ---\n\n")
-        sfx_queue = WebSFXQueue()
-        sys.stdin.readline = js_input
-        play_game()
-    except Exception as e:
-        import traceback
-        sys.stdout.write(f"\n\n--- PYTHON ERROR ---\n{traceback.format_exc()}")
+    sys.stdout.write = lambda s: bridge.output(s)
+    sys.stdin.readline = js_input
+    sys.stdout.write("\n\n--- ENGINE STARTED ---\n\n")
+    import __main__
+    play_game = __main__.play_game_func
+    sfx_queue = WebSFXQueue()
+    play_game()
