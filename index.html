@@ -60,14 +60,20 @@
                     sys.stdin.readline = lambda: bridge.input()
                 `);
 
-                outputDiv.innerText += "\nStep 4: Fetching game_browser.py...";
+                outputDiv.innerText += "\nStep 4: Fetching game.py...";
+                let gameResponse = await fetch('game.py');
+                if (!gameResponse.ok) {
+                    throw new Error("HTTP " + gameResponse.status + " fetching game.py (check zip structure)");
+                }
+                let gameSource = await gameResponse.text();
+                pyodide.runPython(gameSource);
+
+                outputDiv.innerText += "\nStep 5: Fetching game_browser.py...";
                 let response = await fetch('game_browser.py');
                 if (!response.ok) {
                     throw new Error("HTTP " + response.status + " fetching game_browser.py (check zip structure)");
                 }
                 let gameText = await response.text();
-                
-                outputDiv.innerText += "\nStep 5: Running Script...";
                 pyodide.runPython(gameText);
                 
                 outputDiv.innerText += "\nStep 6: Starting Game Loop...";
