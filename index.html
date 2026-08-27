@@ -53,23 +53,23 @@
 
                 pyodide.globals.set("bridge", window.pyodideBridge);
                 
-                outputDiv.innerText += "\nStep 3: Wiring I/O...";
-                pyodide.runPython(`
-                    import sys
-                    sys.stdout.write = lambda s: bridge.output(s)
-                    sys.stdin.readline = lambda: bridge.input()
-                `);
+                outputDiv.innerText += "\nStep 3: Fetching Source Files...";
+                let gameSource = await (await fetch('game.py')).text();
+                let browserSource = await (await fetch('game_browser.py')).text();
 
-                outputDiv.innerText += "\nStep 4: Fetching game_browser.py...";
-                let response = await fetch('game_browser.py');
-                if (!response.ok) {
-                    throw new Error("HTTP " + response.status + " fetching game_browser.py (check zip structure)");
-                }
-                let gameText = await response.text();
-                pyodide.runPython(gameText);
-                
+                outputDiv.innerText += "\nStep 4: Injecting Engine into Python Memory...";
+                pyodide.globals.set("game_code", gameSource);
+                pyodide.runPython(`
+import sys, types
+game_module = types.ModuleType('game')
+sys.modules['game'] = game_module
+exec(globals()['game_code'], game_module.__dict__)
+`);
+
                 outputDiv.innerText += "\nStep 5: Starting Game Loop...";
+                pyodide.runPython(browserSource);
                 pyodide.runPythonAsync("import game_browser; game_browser.start()");
+
             } catch (error) {
                 outputDiv.innerText += "\n\n[ERROR]\n" + error.message;
                 console.error(error);
