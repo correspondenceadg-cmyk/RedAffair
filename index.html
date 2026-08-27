@@ -60,11 +60,13 @@
                 outputDiv.innerText += "\nStep 4: Injecting Engine into Python Memory...";
                 pyodide.globals.set("game_code", gameSource);
                 pyodide.runPython(`
-import sys, types
+import sys, types, __main__
 game_module = types.ModuleType('game')
 sys.modules['game'] = game_module
-exec(globals()['game_code'], game_module.__dict__)
-import __main__
+code = globals()['game_code'].replace("if __name__ == '__main__':", "if False:")
+exec(code, game_module.__dict__)
+if not hasattr(game_module, 'play_game'):
+    game_module.play_game = lambda: print("Error: play_game not found")
 __main__.play_game_func = game_module.play_game
 `);
 
