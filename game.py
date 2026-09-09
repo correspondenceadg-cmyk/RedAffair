@@ -12,7 +12,7 @@ def play_game():
     RESET = '\033[0m'
     GRAY = '\033[90m'
 
-    TOTAL_NON_MISLEADING = 21 
+    TOTAL_NON_MISLEADING = 21
 
     def clear_screen():
         print("##CLEARSCREEN##")
@@ -320,6 +320,8 @@ def play_game():
     # ---------- Game State ----------
     current_location = "counter"
     inventory = ["notepad"]
+    if player_lean == "liberal":
+        inventory.append("credits_wad")
     handcuffs = 3
     clues = set()
     body_examined = False
@@ -352,12 +354,12 @@ def play_game():
     # ---------- Misleading Clues ----------
     MISLEADING_CLUES = {
         "marcus": ["aiden_says_alice_promoted", "aiden_says_alice_paycheck", "aiden_says_victim_angry"],
-        "cleopatra": ["alice_blake_screenshots", "alice_victim_msg_afraid", "alice_victim_cant_stay_home"],
+        "cleopatra": ["alice_blake_screenshots", "alice_victim_msg_afraid", "alice_victim_cant_stay_home", "dining_ice"],
         "napoleon": ["blake_nyx_bully", "blake_nyx_called_out", "blake_victim_distant"],
         RESERVED_KEY_THX1138: ["nyx_aiden_resented", "nyx_alice_promoted_over_victim", "nyx_victim_didnt_want_return"],
         "janitor": ["luka_says_cook_threatened", "luka_says_patron_was_outside", "luka_says_ring_was_planted"],
-        "cook": ["adeline_says_janitor_stole_ring", "adeline_says_alice_argued", "adeline_says_victim_was_armed"],
-        "patron": ["hemlock_says_blake_threatened", "hemlock_says_airlock_heard", "hemlock_says_nyx_was_calm"]
+        "cook": ["adeline_says_janitor_stole_ring", "adeline_says_alice_argued", "adeline_says_victim_was_armed", "apartment_flyers"],
+        "patron": ["hemlock_says_blake_threatened", "hemlock_says_airlock_heard", "hemlock_says_nyx_was_calm", "bathroom_syntharette"]
     }
 
     MISLEADING_DIALOGUE = {
@@ -470,6 +472,9 @@ def play_game():
         "bloody_cleaver": "A bloody cleaver in the freezer. A grisly red herring.",
         "cleaver_analysis": "Scanner shows the blood is lab-meat juice, not human.",
         "galactic_id2": "Victim's real ID. Marsha Stone. No doubt about it now.",
+        "apartment_flyers": "A stack of paper flyers for other apartment units in the neighborhood.",
+        "dining_ice": "Ice machine with clear fingerprints on the handle.",
+        "bathroom_syntharette": "A single, smoked syntharette jammed up in the vent grate.",
     }
 
     # ---------- Evidence Implication / Exoneration ----------
@@ -525,6 +530,9 @@ def play_game():
         "bloody_cleaver": (["Unknown"], []),
         "cleaver_analysis": (["Unknown"], []),
         "galactic_id2": ([], ["Marsha"]),
+        "apartment_flyers": (["Adeline"], []),
+        "dining_ice": (["Unknown"], ["Napoleon"]),
+        "bathroom_syntharette": (["Unknown"], []),
     }
 
     # ---------- Evidence Aliases ----------
@@ -553,6 +561,9 @@ def play_game():
         "cleaver analysis": "cleaver_analysis",
         "fake id": "galactic_id", "fake identification": "galactic_id",
         "victim's id": "galactic_id2", "real id": "galactic_id2", "marsha's id": "galactic_id2",
+        "apartment flyers": "apartment_flyers", "flyers": "apartment_flyers",
+        "ice machine": "dining_ice", "fingerprints": "dining_ice",
+        "syntharette": "bathroom_syntharette", "vent": "bathroom_syntharette",
 
         # ---------- Merged Gossip Aliases ----------
         "alice's motive": ["aiden_says_alice_promoted", "nyx_alice_promoted_over_victim"],
@@ -630,6 +641,9 @@ def play_game():
         "bloody_cleaver": "You scan the cleaver, first for DNA then for prints. The prints match Adeline. She definitely handled it.",
         "cleaver_analysis": "Further analysis confirms the blood is lab‑meat juice, not human. Adeline's story checks out.",
         "galactic_id2": "This is her genuine ID. Marsha Stone. No aliases, no games.",
+        "apartment_flyers": "The flyers are all for different addresses. Adeline was planning to move, maybe?",
+        "dining_ice": "The prints are too smudged to match. Anyone could have touched this.",
+        "bathroom_syntharette": "The brand is cheap and common. However, there's only one smoker here.",
     }
 
     # ---------- Tamper / Plant Actions ----------
@@ -859,9 +873,25 @@ def play_game():
                     print("You notice something new: a loose panel behind the toilet. The janitor must have mentioned it.")
             return
         if item == "corkboard" and current_location == "kitchen":
-            print("The corkboard is a collage of fading schedules, a yellowed menu, and a crisp flier for 'Reyes Properties'. The same name as on the victim's ID, if you've seen it.")
-            if "galactic_id" in inventory or "galactic_id2" in inventory:
-                print("The connection clicks: the victim owned the complex where Adeline lives.")
+            if "apartment_flyers" not in clues:
+                print("A corkboard full of old schedules and... paper flyers for other apartments in the neighborhood. Adeline was looking at several properties.")
+                add_evidence("apartment_flyers")
+            else:
+                print("You've already looked at the corkboard. Nothing new.")
+            return
+        if item == "ice_machine" and current_location == "dining":
+            if "dining_ice" not in clues:
+                print("The ice machine is cold, and the handle is smudged with fresh fingerprints. You can't tell whose they are, but someone touched it recently.")
+                add_evidence("dining_ice")
+            else:
+                print("You've already checked the ice machine.")
+            return
+        if item == "vent" and current_location == "bathroom":
+            if "bathroom_syntharette" not in clues:
+                print("You pry open the vent grate. Inside, you find a single smoked syntharette. Someone was hiding in here recently.")
+                add_evidence("bathroom_syntharette")
+            else:
+                print("The vent is empty now.")
             return
         if item == "freezer" and current_location == "kitchen":
             if freezer_unlocked:
@@ -1020,34 +1050,37 @@ def play_game():
 
         while True:
             print("\nWhat do you say?")
-            options = ["alibi", "motive"]
-            if sus == RESERVED_KEY_THX1138 and "nyx_message" in clues:
-                options.append("the torn paper")
-            if sus == RESERVED_KEY_THX1138 and revolver_found:
-                options.append("the revolver")
-            if sus == "marcus" and "aiden_footprint" not in clues:
-                options.append("anything odd outside")
-            if sus == "napoleon" and "blake_witness" not in clues:
-                options.append("did you see anything")
-            if sus == "cleopatra" and "alice_witness" not in clues:
-                options.append("the argument")
-            if sus == "janitor" and "luka_swept" not in clues:
-                options.append("the floor")
-            if sus == "cook" and "adeline_heard" not in clues:
-                options.append("the office")
-            if sus == "patron" and "hemlock_yelling" not in clues:
-                options.append("the noise")
+            options = ["alibi"]
+            if trust[sus] >= 1:
+                options.append("motive")
+            if trust[sus] >= 2:
+                if sus == RESERVED_KEY_THX1138 and "nyx_message" in clues:
+                    options.append("the torn paper")
+                if sus == RESERVED_KEY_THX1138 and revolver_found:
+                    options.append("the revolver")
+                if sus == "marcus" and "aiden_footprint" not in clues:
+                    options.append("anything odd outside")
+                if sus == "napoleon" and "blake_witness" not in clues:
+                    options.append("did you see anything")
+                if sus == "cleopatra" and "alice_witness" not in clues:
+                    options.append("the argument")
+                if sus == "janitor" and "luka_swept" not in clues:
+                    options.append("the floor")
+                if sus == "cook" and "adeline_heard" not in clues:
+                    options.append("the office")
+                if sus == "patron" and "hemlock_yelling" not in clues:
+                    options.append("the noise")
+            if trust[sus] >= 3:
+                gossip_clue = None
+                for speaker, (target, _, clue_id) in MOTIVE_GOSSIP.items():
+                    if target == sus and clue_id in clues:
+                        gossip_clue = clue_id
+                        break
+                if gossip_clue:
+                    options.append(f"confront {get_first_name(suspects[sus]['name'])}")
 
             if suspects["cook"].get("escaped", False) and sus != "cook":
                 options.append("Adeline's escape")
-
-            gossip_clue = None
-            for speaker, (target, _, clue_id) in MOTIVE_GOSSIP.items():
-                if target == sus and clue_id in clues:
-                    gossip_clue = clue_id
-                    break
-            if gossip_clue:
-                options.append(f"confront {get_first_name(suspects[sus]['name'])}")
 
             for i, opt in enumerate(options, 1):
                 print(f"{i}. Ask about {opt}")
@@ -1185,27 +1218,56 @@ def play_game():
             print("Threatening the air. Bold. Ineffective.")
             return
         curse = random.choice(s["curses"]) if s["curses"] else ""
-        print(f"You invade {get_first_name(s['name'])}'s space. The tension rises and the pressure is on.")
-        if sus == "marcus":
-            print(f"He cracks. 'Fine! I saw {suspects[RESERVED_KEY_THX1138]['name']} near the office right before the gunshot, you jerk! Now back off!! Please?!'")
-            trust_change("marcus", 1)
-        elif sus == "napoleon":
-            print("He doesn't flinch. 'Intimidation is a crude tool. I prefer kindness.' You feel vaguely embarrassed and a little ashamed.")
-        elif sus == "cleopatra":
-            print("She laughs. Your ego dissolves. 'You dare intimidate me?' Her voice carries a weight that could crush a songbird. Trust completely evaporates.")
-            for s2 in suspects:
-                if s2 != sus:
-                    trust_change(s2, -1)
-        elif sus == "janitor":
-            print(f"He stammers. 'Okay! Okay! I saw {suspects[RESERVED_KEY_THX1138]['name']} go into the office just before it happened. Please don't hurt me!'")
-            trust_change("janitor", 1)
-        elif sus == "cook":
-            print("She stares through you. 'Threats? In my kitchen? You're either brave or stupid.' She doesn't break, but you see a flicker of fear.")
-        elif sus == "patron":
-            print("He chuckles. 'Son, I've been threatened by people twice your size and half your nerve. You'll need to do better.'")
-        elif sus == RESERVED_KEY_THX1138:
-            print(f"Their face hardens into something between complete disdain and total disregard. 'No proof, no case, no hope, detective.' They seem much more hostile now. Congratulations.")
-            s["hostile"] = True
+
+        success = random.random()
+        if player_lean == "liberal" and "credits_wad" in inventory:
+            success -= 0.25
+        elif player_lean == "fascist":
+            success += 0.15
+
+        if success < 0.5:
+            print(f"You invade {get_first_name(s['name'])}'s space. The tension rises and the pressure is on.")
+            if trust[sus] == 0:
+                print(f"{get_first_name(s['name'])} reacts violently. 'I don't have to listen to this!' They are now hostile.")
+                s["hostile"] = True
+                return
+            if sus == "marcus":
+                print(f"He cracks. 'Fine! I saw {suspects[RESERVED_KEY_THX1138]['name']} near the office right before the gunshot, you jerk! Now back off!! Please?!'")
+                trust_change("marcus", 1)
+            elif sus == "napoleon":
+                if "bloody_cleaver" in clues:
+                    print(f"He stammers, his eyes darting towards the kitchen. 'I saw Adeline threatening Marsha earlier! I swear! I was just writing!'")
+                    if "luka_says_cook_threatened" not in clues:
+                        add_evidence("luka_says_cook_threatened")
+                    trust_change("napoleon", 1)
+                else:
+                    print(f"He flinches. 'The janitor! Elliot! He was acting all weird about Marsha's ring! I saw him hiding near the back!'")
+                    if "luka_says_ring_was_planted" not in clues:
+                        add_evidence("luka_says_ring_was_planted")
+                    trust_change("napoleon", 1)
+            elif sus == "cleopatra":
+                if "bloody_cleaver" in clues:
+                    print(f"She scoffs. 'Oh, please. You found the fry-cook's toy. She had no motive, just a landlord problem. If you're looking for malice, don't look at Adeline.'")
+                    if "adeline_says_janitor_stole_ring" not in clues:
+                        add_evidence("adeline_says_janitor_stole_ring")
+                    trust_change("cleopatra", 1)
+                else:
+                    print(f"She laughs. 'You dare intimidate me?' Your ego dissolves. Trust completely evaporates.")
+                    for s2 in suspects:
+                        if s2 != sus:
+                            trust_change(s2, -1)
+            elif sus == "janitor":
+                print(f"He stammers. 'Okay! Okay! I saw {suspects[RESERVED_KEY_THX1138]['name']} go into the office just before it happened. Please don't hurt me!'")
+                trust_change("janitor", 1)
+            elif sus == "cook":
+                print("She stares through you. 'Threats? In my kitchen? You're either brave or stupid.' She doesn't break, but you see a flicker of fear.")
+            elif sus == "patron":
+                print("He chuckles. 'Son, I've been threatened by people twice your size and half your nerve. You'll need to do better.'")
+            elif sus == RESERVED_KEY_THX1138:
+                print(f"Their face hardens into something between complete disdain and total disregard. 'No proof, no case, no hope, detective.' They seem much more hostile now. Congratulations.")
+                s["hostile"] = True
+        else:
+            print(f"Your threat falls flat. {get_first_name(s['name'])} laughs at you.")
 
     # ---------- Detain ----------
     def detain(sus):
@@ -1383,6 +1445,11 @@ def play_game():
             print(f"'{sus}' doesn't match anyone. Try: Aiden, Blake, Alice, Nyx, Elliot, Adeline, Alexander.")
             return
         if sfx_queue: sfx_queue.put('accuse')
+
+        if sus != RESERVED_KEY_THX1138 and trust[sus] >= 3:
+            print(f"{get_first_name(suspects[sus]['name'])} stares at you in disbelief. 'This is a pure betrayal!'")
+            suspects[sus]["hostile"] = True
+
         if sus == "cook" and not suspects["cook"]["exonerated"] and not suspects["cook"]["detained"] and not suspects["cook"]["defeated"]:
             print("Adeline's eyes widen. 'You think it was me? No, no, no...' She bolts for the back door!")
             print("She escapes into the void before you can react. The case just got harder.")
@@ -1516,58 +1583,41 @@ def play_game():
         countenance_used = True
 
         if player_lean == "liberal":
-            sus_keys = locations[current_location].get("suspects", [])
-            valid_sus = None
-            for key in sus_keys:
-                if not suspects[key]["exonerated"] and trust[key] >= 3:
-                    valid_sus = key
-                    break
-            if not valid_sus:
-                print("The required trust isn't there. The moment fades, wasted.")
+            if "credits_wad" not in inventory:
+                print("You reach for your credits, but your pockets are empty. The Countenance fizzles.")
                 return
-            print("You flash a fat stack of credits, multiple denominations, multiple forms of currency, all tied together with a rubber band. You ask, gently, with this new tool of persuasion.")
-            s = suspects[valid_sus]
-            print(f"{get_first_name(s['name'])} spills everything they know about another patron. The evidence is bought and paid for, but cash quantity doesn't always mean product quality.")
-            for ev in MISLEADING_CLUES.get(valid_sus, []):
-                add_evidence(ev)
-                dialogue = MISLEADING_DIALOGUE.get(ev, f"'{ev}'")
-                print(f"   {get_first_name(s['name'])} says: {dialogue}")
+            print("You flash a fat stack of credits. The bribe is tempting, and the target takes it.")
         elif player_lean == "fascist":
-            sus_keys = locations[current_location].get("suspects", [])
-            valid_sus = None
-            for key in sus_keys:
-                if not suspects[key]["exonerated"]:
-                    valid_sus = key
-                    break
-            if not valid_sus:
-                print("Nobody here to interrogate. The Countenance fizzles uselessly.")
-                return
-            s = suspects[valid_sus]
-            if s["exonerated"]:
-                print("They've been exonerated. No point.")
-                return
-            print("You flash your badge and strike the federal salute pose. Their visage softens greatly as you threaten to throw them, their family, and anyone they've ever loved into a deep dark mine with no escape, benefits, or unions to speak of.")
-            if valid_sus != RESERVED_KEY_THX1138:
-                others = [k for k in suspects if k != valid_sus and k != RESERVED_KEY_THX1138]
-                if random.random() < 0.8:
-                    pair = [RESERVED_KEY_THX1138, random.choice(others)]
-                else:
-                    pair = random.sample(others, 2)
-                names = [get_first_name(suspects[k]['name']) for k in pair]
-                print(f"{get_first_name(s['name'])} leans in: 'Ok! Ok! Look, it's either {names[0]} or {names[1]}. I'm sure of it.'")
-            else:
-                innocents = [k for k in suspects if k != RESERVED_KEY_THX1138]
-                pair = random.sample(innocents, 2)
-                names = [get_first_name(suspects[k]['name']) for k in pair]
-                print(f"Nyx smirks. 'If you must know, I suspect {names[0]} or {names[1]}.'")
+            print("You stand at attention and invoke the State's authority. Your threats are now far more intimidating.")
         elif player_lean == "communist":
             handcuffs += 1
             print("You speak into your cufflinks, whether anyone notices or not is immaterial. A commissar materialises from the ventilation shaft, slaps a fresh pair of cuffs into your palm, and vanishes. This is sure to be useful. (+1 cuffs)")
         elif player_lean == "anarchist":
-            print("You distribute anarchist pamphlets, spreading solidarity. Those leaning anarchist or communist take notice.")
-            for k in suspects:
-                if suspects[k]["lean"] in ("anarchist", "communist") and suspects[k]["alive"] and not suspects[k]["exonerated"]:
-                    trust_change(k, 1)
+            sus_keys = locations[current_location].get("suspects", [])
+            target_sus = None
+            for key in sus_keys:
+                if not suspects[key]["exonerated"] and not suspects[key]["defeated"]:
+                    target_sus = key
+                    break
+            if not target_sus:
+                print("Nobody here to spread the message to. The Countenance fizzles.")
+                return
+            s = suspects[target_sus]
+            name = get_first_name(s['name'])
+            print(f"You scrawl a simple message on a napkin. 'All property is theft' and hand it to {name}.")
+            if s["lean"] == "anarchist":
+                trust_change(target_sus, 2)
+            elif s["lean"] == "communist":
+                trust_change(target_sus, 1)
+            else:
+                if trust[target_sus] == 0:
+                    if s["lean"] == "fascist":
+                        print(f"{name} tears the napkin up. 'How dare you!' They are now hostile.")
+                        s["hostile"] = True
+                    else:
+                        print(f"{name} ignores you. They already don't trust you.")
+                else:
+                    trust_change(target_sus, -2)
         else:
             print("Your Countenance manifests in an unexpected way. Nothing happens.")
         if cheat_infinite_countenance:
