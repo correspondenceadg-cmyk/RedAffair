@@ -1,5 +1,9 @@
 name: Build APK
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -43,4 +47,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: red-affair-apk
-        path: project_dist/gradle/app/build/outputs/apk/debug/*.apk
+        path: project_dist/gradle/app/build/outputs/apk/debug/*.apk   
